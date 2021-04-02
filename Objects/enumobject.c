@@ -82,7 +82,7 @@ enum_new_impl(PyTypeObject *type, PyObject *iterable, PyObject *start)
 
 // TODO: Use AC when bpo-43447 is supported
 static PyObject *
-enum_vectorcall(PyObject *type, PyObject * const*args,
+enum_vectorcall(PyObject *type, PyObject *const *args,
                 size_t nargsf, PyObject *kwnames)
 {
     assert(PyType_Check(type));
@@ -90,7 +90,8 @@ enum_vectorcall(PyObject *type, PyObject * const*args,
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     Py_ssize_t nkwargs = 0;
     if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError, "enumerate() missing required argument 'iterable'");
+        PyErr_SetString(PyExc_TypeError,
+            "enumerate() missing required argument 'iterable'");
         return NULL;
     }
     if (kwnames != NULL) {
@@ -101,7 +102,8 @@ enum_vectorcall(PyObject *type, PyObject * const*args,
         if (nkwargs == 1) {
             PyObject *kw = PyTuple_GET_ITEM(kwnames, 0);
             if (!_PyUnicode_EqualToASCIIString(kw, "start")) {
-                PyErr_Format(PyExc_TypeError, "'%S' is an invalid keyword argument for enumerate()", kw);
+                PyErr_Format(PyExc_TypeError,
+                    "'%S' is an invalid keyword argument for enumerate()", kw);
                 return NULL;
             }
         }
@@ -112,7 +114,8 @@ enum_vectorcall(PyObject *type, PyObject * const*args,
         return enum_new_impl(tp, args[0], NULL);
     }
 
-    PyErr_Format(PyExc_TypeError, "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
+    PyErr_Format(PyExc_TypeError,
+        "enumerate() takes at most 2 arguments (%d given)", nargs + nkwargs);
     return NULL;
 }
 
