@@ -4799,16 +4799,6 @@ skip_to_next_entry(unsigned char *p) {
     return p;
 }
 
-static inline unsigned char *
-parse_range(unsigned char *p, int *start, int*end)
-{
-    p = parse_varint(p, start);
-    int size;
-    p = parse_varint(p, &size);
-    *end = *start + size;
-    return p;
-}
-
 static inline void
 parse_block(unsigned char *p, PyTryBlock *block) {
     int depth_and_lasti;
