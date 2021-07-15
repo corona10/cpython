@@ -3,7 +3,6 @@
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <bcrypt.h>
-#  define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 #else
 #  include <fcntl.h>
 #  ifdef HAVE_SYS_STAT_H
@@ -50,9 +49,9 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
     while (size > 0)
     {
         DWORD chunk = (DWORD)Py_MIN(size, PY_DWORD_MAX);
-        if (BCryptGenRandom(NULL, buffer, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != STATUS_SUCCESS)
-        {
-            /* CryptGenRandom() failed */
+        NTSTATUS status = BCryptGenRandom(NULL, buffer, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+        if (!BCRYPT_SUCCESS(status)) {
+            /* BCryptGenRandom() failed */
             if (raise) {
                 PyErr_SetFromWindowsErr(0);
             }
