@@ -46,6 +46,7 @@ static int _Py_HashSecret_Initialized = 0;
 static int
 win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
 {
+    printf("hi\n");
     while (size > 0)
     {
         DWORD chunk = (DWORD)Py_MIN(size, PY_DWORD_MAX);
