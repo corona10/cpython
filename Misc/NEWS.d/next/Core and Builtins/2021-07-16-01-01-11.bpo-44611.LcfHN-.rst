@@ -1,0 +1,2 @@
+Use BCryptGenRandom instead of CryptGenRandom on Windows. Patch by Dong-hee
+Na.
