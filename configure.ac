@@ -1437,7 +1437,7 @@ if test "$Py_LTO" = 'true' ; then
           then
             LTOFLAGS="-flto"
           else
-            LTOFLAGS="-flto=${Py_LTO_POLICY}"
+            LTOFLAGS="-flto=${Py_LTO_POLICY} -mllvm -polly -mllvm -polly-vectorizer=stripmine"
           fi
           ;;
       esac
