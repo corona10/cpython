@@ -811,8 +811,9 @@ if sys.platform == 'win32':
         # Return ALL handles which are currently signalled.  (Only
         # returning the first signalled might create starvation issues.)
         L = list(handles)
+        n_handles = len(L)
         ready = []
-        while L:
+        while len(ready) < n_handles:
             res = _winapi.WaitForMultipleObjects(L, False, timeout)
             if res == WAIT_TIMEOUT:
                 break
@@ -823,7 +824,6 @@ if sys.platform == 'win32':
             else:
                 raise RuntimeError('Should not get here')
             ready.append(L[res])
-            L = L[res+1:]
             timeout = 0
         return ready
 
