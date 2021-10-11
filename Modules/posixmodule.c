@@ -15802,6 +15802,23 @@ posixmodule_exec(PyObject *m)
 
     PyModule_AddObject(m, "_have_functions", list);
 
+#if HAVE_NON_LEGACY_STATFS
+    struct statfs stats;
+    int result = statfs("/sys/fs/cgroup", &stats);
+    if (result == 0) {
+        // TMPFS_MAGIC
+        if (stats.f_type == 0x01021994) {
+            PyModule_AddIntConstant(m, "cgroup_version", 1);
+        }
+        // CGROUP2_SUPER_MAGIC
+        else if (stats.f_type == 0x63677270) {
+            PyModule_AddIntConstant(m, "cgroup_version", 2);
+        }
+        else {
+            PyModule_AddIntConstant(m, "cgroup_version", -1);
+        }
+    }
+#endif
     return 0;
 }
 
