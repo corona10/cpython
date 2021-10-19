@@ -424,7 +424,7 @@ static bool mi_allocator_init(const char** message) {
   if (message != NULL) *message = NULL;
   return true;
 }
-static void mi_allocator_done() {
+static void mi_allocator_done(void) {
   // nothing to do
 }
 #endif
