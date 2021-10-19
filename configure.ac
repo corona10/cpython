@@ -1638,7 +1638,7 @@ AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=gnu99"
 
     AC_MSG_CHECKING(for -Wextra)
      ac_save_cc="$CC"

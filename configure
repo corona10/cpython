@@ -7076,7 +7076,7 @@ UNIVERSAL_ARCH_FLAGS=
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
-    CFLAGS_NODIST="$CFLAGS_NODIST -std=c99"
+    CFLAGS_NODIST="$CFLAGS_NODIST -std=gnu99"
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wextra" >&5
 $as_echo_n "checking for -Wextra... " >&6; }
