@@ -1238,24 +1238,6 @@ fi
 AC_SUBST(ABIFLAGS)
 ABIFLAGS=""
 
-# --with-mimalloc
-PY_MIMALLOC=0
-AC_MSG_CHECKING(for --with-mimalloc)
-AC_ARG_WITH(mimalloc,
-  AS_HELP_STRING([--with-mimalloc],
-                 [build with mimalloc memory allocator (default is no)]),
-[
-if test "$withval" = no
-then
-  AC_MSG_RESULT(no);
-else
-  AC_MSG_RESULT(yes);
-  PY_MIMALLOC=1
-  AC_DEFINE(PY_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
-fi],
-[AC_MSG_RESULT(yes)])
-AC_SUBST(PY_MIMALLOC)
-
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug,
@@ -3618,6 +3600,27 @@ then
 fi
 AC_MSG_RESULT($with_doc_strings)
 
+# --with-mimalloc
+PY_MIMALLOC=0
+AC_MSG_CHECKING(for --with-mimalloc)
+AC_ARG_WITH(mimalloc,
+  AS_HELP_STRING([--with-mimalloc],
+                 [build with mimalloc memory allocator (default is no)]),
+[
+if test "$withval" = no
+then
+  AC_MSG_RESULT(no);
+else
+  AC_MSG_RESULT(yes)
+  PY_MIMALLOC=1
+  # disable pymalloc and freelists with mimalloc
+  with_pymalloc="no"
+  with_freelists="no"
+  AC_DEFINE(PY_MIMALLOC, 1, Define Python uses mimalloc memory allocator.)
+fi],
+[AC_MSG_RESULT(yes)])
+AC_SUBST(PY_MIMALLOC)
+
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
@@ -3633,6 +3636,22 @@ then
      [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT($with_pymalloc)
+
+# Check for Python-specific malloc support
+AC_MSG_CHECKING(for --with-freelists)
+AC_ARG_WITH(freelists,
+            AS_HELP_STRING([--with-freelists], [enable object freelists (default is yes)]))
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+    AC_DEFINE(WITH_FREELISTS, 1,
+     [Define if you want to compile in object freelist optimization])
+fi
+AC_MSG_RESULT($with_freelists)
 
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING(for --with-c-locale-coercion)

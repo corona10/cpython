@@ -93,6 +93,18 @@ struct _Py_float_state {
     PyFloatObject *free_list;
 };
 
+#ifndef WITH_FREELISTS
+// without freelists
+// for tuples only store empty tuple singleton
+#  define PyTuple_MAXSAVESIZE 1
+#  define PyTuple_MAXFREELIST 1
+#  define PyList_MAXFREELIST 0
+#  define PyDict_MAXFREELIST 0
+#  define PyFrame_MAXFREELIST 0
+#  define _PyAsyncGen_MAXFREELIST 0
+#  define PyContext_MAXFREELIST 0
+#endif
+
 /* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef PyTuple_MAXSAVESIZE
    // Largest tuple to save on free list
@@ -119,8 +131,10 @@ struct _Py_tuple_state {
 #endif
 
 struct _Py_list_state {
+#if PyList_MAXFREELIST > 0
     PyListObject *free_list[PyList_MAXFREELIST];
     int numfree;
+#endif
 };
 
 #ifndef PyDict_MAXFREELIST
@@ -128,17 +142,25 @@ struct _Py_list_state {
 #endif
 
 struct _Py_dict_state {
+#if PyDict_MAXFREELIST > 0
     /* Dictionary reuse scheme to save calls to malloc and free */
     PyDictObject *free_list[PyDict_MAXFREELIST];
     int numfree;
     PyDictKeysObject *keys_free_list[PyDict_MAXFREELIST];
     int keys_numfree;
+#endif
 };
 
+#ifndef PyFrame_MAXFREELIST
+#  define PyFrame_MAXFREELIST 200
+#endif
+
 struct _Py_frame_state {
+#if PyFrame_MAXFREELIST > 0
     PyFrameObject *free_list;
     /* number of frames currently in free_list */
     int numfree;
+#endif
 };
 
 #ifndef _PyAsyncGen_MAXFREELIST
@@ -146,6 +168,7 @@ struct _Py_frame_state {
 #endif
 
 struct _Py_async_gen_state {
+#if _PyAsyncGen_MAXFREELIST > 0
     /* Freelists boost performance 6-10%; they also reduce memory
        fragmentation, as _PyAsyncGenWrappedValue and PyAsyncGenASend
        are short-living objects that are instantiated for every
@@ -155,12 +178,19 @@ struct _Py_async_gen_state {
 
     struct PyAsyncGenASend* asend_freelist[_PyAsyncGen_MAXFREELIST];
     int asend_numfree;
+#endif
 };
 
+#ifndef PyContext_MAXFREELIST
+#  define PyContext_MAXFREELIST 255
+#endif
+
 struct _Py_context_state {
+#if PyContext_MAXFREELIST > 0
     // List of free PyContext objects
     PyContext *freelist;
     int numfree;
+#endif
 };
 
 struct _Py_exc_state {

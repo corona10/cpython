@@ -659,6 +659,7 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+PY_MIMALLOC
 TCLTK_LIBS
 TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
@@ -691,7 +692,6 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
-PY_MIMALLOC
 ABIFLAGS
 LN
 MKDIR_P
@@ -823,7 +823,6 @@ with_cxx_main
 with_suffix
 enable_shared
 enable_profiling
-with_mimalloc
 with_pydebug
 with_trace_refs
 with_assertions
@@ -845,7 +844,9 @@ with_tcltk_libs
 with_dbmliborder
 enable_ipv6
 with_doc_strings
+with_mimalloc
 with_pymalloc
+with_freelists
 with_c_locale_coercion
 with_valgrind
 with_dtrace
@@ -1543,7 +1544,6 @@ Optional Packages:
                           compile main() and link Python executable with C++
                           compiler specified in COMPILER (default is $CXX)
   --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is '.exe')
-  --with-mimalloc         build with mimalloc memory allocator (default is no)
   --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
                           (default is no)
@@ -1585,7 +1585,9 @@ Optional Packages:
                           value is a colon separated string with the backend
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
+  --with-mimalloc         build with mimalloc memory allocator (default is no)
   --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
                           enable C locale coercion to a UTF-8 based locale
                           (default is yes)
@@ -6397,33 +6399,6 @@ fi
 # For calculating the .so ABI tag.
 
 ABIFLAGS=""
-
-# --with-mimalloc
-PY_MIMALLOC=0
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
-$as_echo_n "checking for --with-mimalloc... " >&6; }
-
-# Check whether --with-mimalloc was given.
-if test "${with_mimalloc+set}" = set; then :
-  withval=$with_mimalloc;
-if test "$withval" = no
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; };
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; };
-  PY_MIMALLOC=1
-
-$as_echo "#define PY_MIMALLOC 1" >>confdefs.h
-
-fi
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-
-
 
 # Check for --with-pydebug
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pydebug" >&5
@@ -11606,6 +11581,36 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
 $as_echo "$with_doc_strings" >&6; }
 
+# --with-mimalloc
+PY_MIMALLOC=0
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
+$as_echo_n "checking for --with-mimalloc... " >&6; }
+
+# Check whether --with-mimalloc was given.
+if test "${with_mimalloc+set}" = set; then :
+  withval=$with_mimalloc;
+if test "$withval" = no
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; };
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  PY_MIMALLOC=1
+  # disable pymalloc and freelists with mimalloc
+  with_pymalloc="no"
+  with_freelists="no"
+
+$as_echo "#define PY_MIMALLOC 1" >>confdefs.h
+
+fi
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+
+
 # Check for Python-specific malloc support
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
 $as_echo_n "checking for --with-pymalloc... " >&6; }
@@ -11628,6 +11633,29 @@ $as_echo "#define WITH_PYMALLOC 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_pymalloc" >&5
 $as_echo "$with_pymalloc" >&6; }
+
+# Check for Python-specific malloc support
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-freelists" >&5
+$as_echo_n "checking for --with-freelists... " >&6; }
+
+# Check whether --with-freelists was given.
+if test "${with_freelists+set}" = set; then :
+  withval=$with_freelists;
+fi
+
+
+if test -z "$with_freelists"
+then
+    with_freelists="yes"
+fi
+if test "$with_freelists" != "no"
+then
+
+$as_echo "#define WITH_FREELISTS 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_freelists" >&5
+$as_echo "$with_freelists" >&6; }
 
 # Check for --with-c-locale-coercion
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-c-locale-coercion" >&5
