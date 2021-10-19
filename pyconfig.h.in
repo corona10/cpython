@@ -1404,6 +1404,9 @@
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
 
+/* Define Python uses mimalloc memory allocator. */
+#undef PY_MIMALLOC
+
 /* Default cipher suites list for ssl module. 1: Python's preferred selection,
    2: leave OpenSSL defaults untouched, 0: custom string */
 #undef PY_SSL_DEFAULT_CIPHERS
