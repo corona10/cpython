@@ -2203,31 +2203,35 @@ check_eval_breaker:
             }
         }
 
-        TARGET(BINARY_SUBTRACT_INT) {
+        TARGET(BINARY_SUBTRACT_FAST) {
             PyObject *left = SECOND();
             PyObject *right = TOP();
-            DEOPT_IF(!PyLong_CheckExact(left), BINARY_SUBTRACT);
-            DEOPT_IF(!PyLong_CheckExact(right), BINARY_SUBTRACT);
+            int same = Py_IS_TYPE(left, Py_TYPE(right));
+            DEOPT_IF(!PyFloat_CheckExact(left) && !PyLong_CheckExact(left), BINARY_SUBTRACT);
+            DEOPT_IF(!PyFloat_CheckExact(right) && !PyLong_CheckExact(right), BINARY_SUBTRACT);
+            PyObject *sub = NULL;
             STAT_INC(BINARY_SUBTRACT, hit);
-            PyObject *sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            SET_SECOND(sub);
-            Py_DECREF(right);
-            Py_DECREF(left);
-            STACK_SHRINK(1);
-            if (sub == NULL) {
-                goto error;
+            if (PyLong_CheckExact(left)) {
+                if (same != 0) {
+                    sub = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
+                }
+                else {
+                    double left_double = PyLong_AsDouble(left);
+                    double dsub = left_double - ((PyFloatObject *)right)->ob_fval;
+                    sub = PyFloat_FromDouble(dsub);
+                }
             }
-            DISPATCH();
-        }
-
-        TARGET(BINARY_SUBTRACT_FLOAT) {
-            PyObject *left = SECOND();
-            PyObject *right = TOP();
-            DEOPT_IF(!PyFloat_CheckExact(left), BINARY_SUBTRACT);
-            DEOPT_IF(!PyFloat_CheckExact(right), BINARY_SUBTRACT);
-            STAT_INC(BINARY_SUBTRACT, hit);
-            double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
-            PyObject *sub = PyFloat_FromDouble(dsub);
+            else if (PyFloat_CheckExact(left)) {
+                if (same != 0) {
+                    double dsub = ((PyFloatObject *)left)->ob_fval - ((PyFloatObject *)right)->ob_fval;
+                    sub = PyFloat_FromDouble(dsub);
+                }
+                else {
+                    double right_double = PyLong_AsDouble(right);
+                    double dsub = ((PyFloatObject *)left)->ob_fval - right_double;
+                    sub = PyFloat_FromDouble(dsub);
+                }
+            }
             SET_SECOND(sub);
             Py_DECREF(right);
             Py_DECREF(left);

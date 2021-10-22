@@ -1260,16 +1260,20 @@ success:
 int
 _Py_Specialize_BinarySubtract(PyObject *left, PyObject *right, _Py_CODEUNIT *instr)
 {
-    if (!Py_IS_TYPE(left, Py_TYPE(right))) {
+    if (!PyLong_CheckExact(left) && !PyFloat_CheckExact(right)) {
+        SPECIALIZATION_FAIL(BINARY_SUBTRACT, SPEC_FAIL_DIFFERENT_TYPES);
+        goto fail;
+    }
+    if (!PyLong_CheckExact(right) && !PyFloat_CheckExact(right)) {
         SPECIALIZATION_FAIL(BINARY_SUBTRACT, SPEC_FAIL_DIFFERENT_TYPES);
         goto fail;
     }
     if (PyLong_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_INT, initial_counter_value());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FAST, initial_counter_value());
         goto success;
     }
     else if (PyFloat_CheckExact(left)) {
-        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FLOAT, initial_counter_value());
+        *instr = _Py_MAKECODEUNIT(BINARY_SUBTRACT_FAST, initial_counter_value());
         goto success;
     }
     else {
