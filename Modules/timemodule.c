@@ -409,6 +409,10 @@ static int initialized;
 static PyTypeObject StructTimeType;
 
 #if defined(MS_WINDOWS)
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+
 static DWORD timer_flags = CREATE_WAITABLE_TIMER_HIGH_RESOLUTION;
 #endif
 
@@ -2143,9 +2147,6 @@ pysleep(_PyTime_t timeout)
     return 0;
 #else  // MS_WINDOWS
 
-#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
-  #define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
-#endif
     _PyTime_t timeout_100ns = _PyTime_As100Nanoseconds(timeout,
                                                        _PyTime_ROUND_CEILING);
 
