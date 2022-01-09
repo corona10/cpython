@@ -82,8 +82,8 @@ static inline void _PyObject_GC_TRACK(
                           filename, lineno, __func__);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *gc_head = interp->gc.gc_head;
-    PyGC_Head *last = (PyGC_Head*)(gc_head->_gc_prev);
+    PyGC_Head *gc_head = &interp->gc.gc_head;
+    PyGC_Head *last = gc_head->_gc_prev;
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, gc_head);

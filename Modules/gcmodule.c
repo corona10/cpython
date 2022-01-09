@@ -122,7 +122,7 @@ get_gc_state(void)
     return &interp->gc;
 }
 
-#define HEAD(state) ((state)->gc_head)
+#define HEAD(state) (&(state)->gc_head)
 
 PyStatus
 _PyGC_Init(PyInterpreterState *interp)
@@ -331,7 +331,7 @@ _PyGC_InitState(GCState *gcstate)
     for (int i = 0; i < NUM_GENERATIONS; i++) {
         gcstate->generations[i] = generations[i];
     };
-    gc_list_init(gcstate->gc_head);
+    gc_list_init(&gcstate->gc_head);
     struct gc_generation permanent_generation = {
           0, 0
     };
