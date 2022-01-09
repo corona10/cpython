@@ -9,14 +9,17 @@ extern "C" {
 #endif
 
 /* GC information is stored BEFORE the object structure. */
-typedef struct {
+typedef struct _gc_head {
     // Pointer to next object in the list.
     // 0 means the object is not tracked
-    uintptr_t _gc_next;
+    struct _gc_head *_gc_next;
 
     // Pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
-    uintptr_t _gc_prev;
+    struct _gc_head *_gc_prev;
+    uint32_t gc_color;
+    uint32_t gc_flags;
+    int64_t gc_gen;
 } PyGC_Head;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
@@ -31,38 +34,40 @@ typedef struct {
         (!PyTuple_CheckExact(obj) || _PyObject_GC_IS_TRACKED(obj)))
 
 
-/* Bit flags for _gc_prev */
-/* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  (1)
-/* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING (2)
-/* The (N-2) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (2)
-#define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
-
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 #define _PyGCHead_NEXT(g)        ((PyGC_Head*)(g)->_gc_next)
-#define _PyGCHead_SET_NEXT(g, p) _Py_RVALUE((g)->_gc_next = (uintptr_t)(p))
+#define _PyGCHead_SET_NEXT(g, p) ((g)->_gc_next = (p))
 
-// Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
-#define _PyGCHead_PREV(g) ((PyGC_Head*)((g)->_gc_prev & _PyGC_PREV_MASK))
-#define _PyGCHead_SET_PREV(g, p) do { \
-    assert(((uintptr_t)p & ~_PyGC_PREV_MASK) == 0); \
-    (g)->_gc_prev = ((g)->_gc_prev & ~_PyGC_PREV_MASK) \
-        | ((uintptr_t)(p)); \
-    } while (0)
+#define _PyGCHead_PREV(g)        ((PyGC_Head*)(g)->_gc_prev)
+#define _PyGCHead_SET_PREV(g, p) ((g)->_gc_prev = (PyGC_Head*)(p))
 
-#define _PyGCHead_FINALIZED(g) \
-    (((g)->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0)
-#define _PyGCHead_SET_FINALIZED(g) \
-    _Py_RVALUE((g)->_gc_prev |= _PyGC_PREV_MASK_FINALIZED)
 
-#define _PyGC_FINALIZED(o) \
-    _PyGCHead_FINALIZED(_Py_AS_GC(o))
-#define _PyGC_SET_FINALIZED(o) \
-    _PyGCHead_SET_FINALIZED(_Py_AS_GC(o))
+#define GC_FLAG_FINIALIZER_REACHABLE (1<<0)
+/* reachable from legacy finalizer, cannot be collected */
+#define GC_FLAG_LEGACY_FINIALIZER_REACHABLE (1<<1)
+/* set when tp_finalize is called */
+#define GC_FLAG_FINALIZED  (1<<3)
+/* set when object is member of cstate list */
+#define GC_FLAG_IN_CSTATE  (1<<4)
+/* set if object memory needs to be freed at end of GC */
+#define GC_FLAG_NEED_FREE  (1<<5)
 
+#define _PyGC_SET_FLAG(g, v) ((g)->gc_flags |= v)
+#define _PyGC_CLEAR_FLAG(g, v) ((g)->gc_flags &= ~(v))
+#define _PyGC_HAVE_FLAG(g, v) ((g)->gc_flags & v)
+
+static inline int
+_PyGC_FINALIZED(PyObject *op)
+{
+    return _PyGC_HAVE_FLAG(_Py_AS_GC(op), GC_FLAG_FINALIZED);
+}
+
+static inline void
+_PyGC_SET_FINALIZED(PyObject *op)
+{
+    _PyGC_SET_FLAG(_Py_AS_GC(op), GC_FLAG_FINALIZED);
+}
 
 /* GC runtime state */
 
@@ -111,7 +116,6 @@ typedef struct {
 */
 
 struct gc_generation {
-    PyGC_Head head;
     int threshold; /* collection threshold */
     int count; /* count of allocations or collections of younger
                   generations */
@@ -138,7 +142,7 @@ struct _gc_runtime_state {
     int debug;
     /* linked lists of container objects */
     struct gc_generation generations[NUM_GENERATIONS];
-    PyGC_Head *generation0;
+    PyGC_Head *gc_head;
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
