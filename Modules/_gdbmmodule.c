@@ -88,7 +88,12 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode,
     if (even != NULL && odd != NULL && (flags == GDBM_READER)) {
         const char *latest_snapshot;
         if (gdbm_latest_snapshot(even, odd, &latest_snapshot) != GDBM_SNAPSHOT_OK) {
-            PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+            if (errno != 0) {
+                PyErr_SetFromErrno(state->gdbm_error);
+            }
+            else {
+                PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+            }
             Py_DECREF(dp);
             return NULL;
         }
@@ -110,7 +115,12 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode,
     if (odd != NULL && even != NULL) {
         if (flags & GDBM_NUMSYNC) {
             if (gdbm_failure_atomic(dp->di_dbm, even, odd) < 0) {
-                PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+                if (errno != 0) {
+                    PyErr_SetFromErrnoWithFilename(state->gdbm_error, file);
+                }
+                else {
+                    PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+                }
                 Py_DECREF(dp);
                 return NULL;
             }
