@@ -259,7 +259,7 @@ exit:
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
-"open($module, filename, flags=\'r\', mode=0o666, /)\n"
+"open($module, filename, flags=\'r\', mode=0o666, /, snapshots=None)\n"
 "--\n"
 "\n"
 "Open a dbm database and return a dbm object.\n"
@@ -286,27 +286,34 @@ PyDoc_STRVAR(dbmopen__doc__,
 "when the database has to be created.  It defaults to octal 0o666.");
 
 #define DBMOPEN_METHODDEF    \
-    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL, dbmopen__doc__},
+    {"open", (PyCFunction)(void(*)(void))dbmopen, METH_FASTCALL|METH_KEYWORDS, dbmopen__doc__},
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
-             int mode);
+             int mode, PyObject *snapshots);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "snapshots", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "open", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *filename;
     const char *flags = "r";
     int mode = 438;
+    PyObject *snapshots = Py_None;
 
-    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     filename = args[0];
     if (nargs < 2) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("open", "argument 2", "str", args[1]);
         goto exit;
@@ -321,16 +328,22 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (nargs < 3) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     mode = _PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional:
-    return_value = dbmopen_impl(module, filename, flags, mode);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    snapshots = args[3];
+skip_optional_pos:
+    return_value = dbmopen_impl(module, filename, flags, mode, snapshots);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63c507f93d84a3a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1d6a0b7b70aa0fe input=a9049054013a1b77]*/

@@ -73,7 +73,8 @@ GDBM objects also support additional operations such as firstkey,\n\
 nextkey, reorganize, and sync.");
 
 static PyObject *
-newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
+newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode,
+              const char *even, const char *odd)
 {
     gdbmobject *dp = PyObject_GC_New(gdbmobject, state->gdbm_type);
     if (dp == NULL) {
@@ -83,6 +84,17 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
     errno = 0;
     PyObject_GC_Track(dp);
 
+#ifdef GDBM_NUMSYNC
+    if (even != NULL && odd != NULL && (flags == GDBM_READER)) {
+        const char *latest_snapshot;
+        if (gdbm_latest_snapshot(even, odd, &latest_snapshot) != GDBM_SNAPSHOT_OK) {
+            PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+            Py_DECREF(dp);
+            return NULL;
+        }
+        file = latest_snapshot;
+    }
+#endif
     if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0) {
             PyErr_SetFromErrnoWithFilename(state->gdbm_error, file);
@@ -93,6 +105,18 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
         Py_DECREF(dp);
         return NULL;
     }
+
+#ifdef GDBM_NUMSYNC
+    if (odd != NULL && even != NULL) {
+        if (flags & GDBM_NUMSYNC) {
+            if (gdbm_failure_atomic(dp->di_dbm, even, odd) < 0) {
+                PyErr_SetString(state->gdbm_error, gdbm_strerror(gdbm_errno));
+                Py_DECREF(dp);
+                return NULL;
+            }
+        }
+    }
+#endif
     return (PyObject *)dp;
 }
 
@@ -595,6 +619,7 @@ _gdbm.open as dbmopen
     flags: str="r"
     mode: int(py_default="0o666") = 0o666
     /
+    snapshots: object = None
 
 Open a dbm database and return a dbm object.
 
@@ -622,8 +647,9 @@ when the database has to be created.  It defaults to octal 0o666.
 
 static PyObject *
 dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
-             int mode)
-/*[clinic end generated code: output=9527750f5df90764 input=bca6ec81dc49292c]*/
+             int mode, PyObject *snapshots)
+/*[clinic end generated code: output=bc01585384432974 input=dae2eddb69e26182]*/
+
 {
     int iflags;
     _gdbm_state *state = get_gdbm_state(module);
@@ -665,6 +691,11 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 iflags |= GDBM_NOLOCK;
                 break;
 #endif
+#ifdef GDBM_NUMSYNC
+            case 'x':
+                iflags |= GDBM_NUMSYNC;
+                break;
+#endif
             default:
                 PyOS_snprintf(buf, sizeof(buf), "Flag '%c' is not supported.",
                               *flags);
@@ -678,13 +709,85 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
         return NULL;
     }
 
+    if (snapshots != Py_None) {
+#ifdef GDBM_NUMSYNC
+        if (PySequence_Check(snapshots) < 0) {
+            Py_DECREF(filenamebytes);
+            PyErr_SetString(PyExc_TypeError, "snapshots should be sequence type or None.");
+            return NULL;
+        }
+#else
+        Py_DECREF(filenamebytes);
+        PyErr_SetString(PyExc_TypeError, "snapshots only supports from gdbm 1.21");
+        return NULL;
+#endif
+    }
+
     const char *name = PyBytes_AS_STRING(filenamebytes);
     if (strlen(name) != (size_t)PyBytes_GET_SIZE(filenamebytes)) {
         Py_DECREF(filenamebytes);
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
-    PyObject *self = newgdbmobject(state, name, iflags, mode);
+
+    const char *even = NULL;
+    const char *odd = NULL;
+    if (PySequence_Check(snapshots) > 0) {
+        if (PySequence_Length(snapshots) != 2) {
+            Py_DECREF(filenamebytes);
+            PyErr_SetString(PyExc_TypeError, "The length of snapshots should be 2.");
+            return NULL;
+        }
+
+        PyObject *odd_snapshot = PySequence_GetItem(snapshots, 0);
+        if (odd_snapshot == NULL) {
+            Py_DECREF(filenamebytes);
+            return NULL;
+        }
+
+        PyObject *even_snapshot = PySequence_GetItem(snapshots, 1);
+        if (even_snapshot == NULL ) {
+            Py_DECREF(filenamebytes);
+            Py_DECREF(odd_snapshot);
+            return NULL;
+        }
+
+        PyObject *odd_snapshot_bytes;
+        PyObject *even_snapshot_bytes;
+        if (PyUnicode_FSConverter(odd_snapshot, &odd_snapshot_bytes) < 0) {
+            Py_DECREF(filenamebytes);
+            Py_DECREF(odd_snapshot);
+            Py_DECREF(even_snapshot);
+            return NULL;
+        }
+
+        if (PyUnicode_FSConverter(even_snapshot, &even_snapshot_bytes) < 0) {
+            Py_DECREF(filenamebytes);
+            Py_DECREF(odd_snapshot);
+            Py_DECREF(even_snapshot);
+            Py_DECREF(odd_snapshot_bytes);
+            return NULL;
+        }
+
+        odd = PyBytes_AS_STRING(odd_snapshot_bytes);
+        even = PyBytes_AS_STRING(even_snapshot_bytes);
+        Py_DECREF(even_snapshot_bytes);
+        Py_DECREF(odd_snapshot_bytes);
+
+        if (strlen(odd) != (size_t)PyBytes_GET_SIZE(odd_snapshot) ||
+            strlen(even) != (size_t)PyBytes_GET_SIZE(even_snapshot)) {
+            Py_DECREF(filenamebytes);
+            Py_DECREF(even_snapshot);
+            Py_DECREF(odd_snapshot);
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return NULL;
+        }
+
+        Py_DECREF(even_snapshot);
+        Py_DECREF(odd_snapshot);
+    }
+
+    PyObject *self = newgdbmobject(state, name, iflags, mode, even, odd);
     Py_DECREF(filenamebytes);
     return self;
 }
@@ -698,6 +801,9 @@ static const char gdbmmodule_open_flags[] = "rwcn"
 #endif
 #ifdef GDBM_NOLOCK
                                      "u"
+#endif
+#ifdef GDBM_NUMSYNC
+                                     "x"
 #endif
                                      ;
 
