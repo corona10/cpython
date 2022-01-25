@@ -742,6 +742,8 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
 
     const char *even = NULL;
     const char *odd = NULL;
+    PyObject *odd_snapshot_bytes;
+    PyObject *even_snapshot_bytes;
     if (PySequence_Check(snapshots) > 0) {
         if (PySequence_Length(snapshots) != 2) {
             Py_DECREF(filenamebytes);
@@ -762,8 +764,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
             return NULL;
         }
 
-        PyObject *odd_snapshot_bytes;
-        PyObject *even_snapshot_bytes;
         if (PyUnicode_FSConverter(odd_snapshot, &odd_snapshot_bytes) < 0) {
             Py_DECREF(filenamebytes);
             Py_DECREF(odd_snapshot);
@@ -781,8 +781,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
 
         odd = PyBytes_AS_STRING(odd_snapshot_bytes);
         even = PyBytes_AS_STRING(even_snapshot_bytes);
-        Py_DECREF(even_snapshot_bytes);
-        Py_DECREF(odd_snapshot_bytes);
 
         if (strlen(odd) != (size_t)PyBytes_GET_SIZE(odd_snapshot) ||
             strlen(even) != (size_t)PyBytes_GET_SIZE(even_snapshot)) {
@@ -792,13 +790,16 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
             PyErr_SetString(PyExc_ValueError, "embedded null character");
             return NULL;
         }
-
         Py_DECREF(even_snapshot);
         Py_DECREF(odd_snapshot);
     }
 
     PyObject *self = newgdbmobject(state, name, iflags, mode, even, odd);
     Py_DECREF(filenamebytes);
+    if (even != NULL && odd != NULL) {
+        Py_DECREF(even_snapshot_bytes);
+        Py_DECREF(odd_snapshot_bytes);
+    }
     return self;
 }
 
