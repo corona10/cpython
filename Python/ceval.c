@@ -4987,6 +4987,30 @@ handle_eval_breaker:
             NOTRACE_DISPATCH();
         }
 
+        TARGET(CALL_NO_KW_SET_ADD) {
+            assert(cframe.use_tracing == 0);
+            assert(call_shape.kwnames == NULL);
+            SpecializedCacheEntry *caches = GET_CACHE();
+            _PyObjectCache *cache1 = &caches[-1].obj;
+            DEOPT_IF(call_shape.total_args != 2, CALL);
+            DEOPT_IF(call_shape.callable != cache1->obj, CALL);
+            PyObject *set = SECOND();
+            DEOPT_IF(!PySet_Check(set), CALL);
+            STAT_INC(CALL, hit);
+            PyObject *arg = TOP();
+            int err = PySet_Add(set, arg);
+            if (err) {
+                goto error;
+            }
+            Py_DECREF(arg);
+            Py_DECREF(set);
+            STACK_SHRINK(call_shape.postcall_shrink+1);
+            Py_INCREF(Py_None);
+            SET_TOP(Py_None);
+            Py_DECREF(call_shape.callable);
+            NOTRACE_DISPATCH();
+        }
+
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
             assert(call_shape.kwnames == NULL);
             DEOPT_IF(call_shape.total_args != 2, CALL);

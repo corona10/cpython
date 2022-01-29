@@ -1410,7 +1410,9 @@ builtin_call_fail_kind(int ml_flags)
 #endif
 
 static PyMethodDescrObject *_list_append = NULL;
+static PyMethodDescrObject *_set_add = NULL;
 _Py_IDENTIFIER(append);
+_Py_IDENTIFIER(add);
 
 static int
 specialize_method_descriptor(
@@ -1424,11 +1426,21 @@ specialize_method_descriptor(
     if (_list_append == NULL) {
         _list_append = (PyMethodDescrObject *)_PyType_LookupId(&PyList_Type, &PyId_append);
     }
+    if (_set_add == NULL) {
+        _set_add = (PyMethodDescrObject *)_PyType_LookupId(&PySet_Type, &PyId_add);
+    }
     assert(_list_append != NULL);
+    assert(_set_add != NULL);
     if (nargs == 2 && descr == _list_append) {
         assert(_Py_OPCODE(instr[-1]) == PRECALL_METHOD);
         cache[-1].obj.obj = (PyObject *)_list_append;
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_LIST_APPEND, _Py_OPARG(*instr));
+        return 0;
+    }
+    if (nargs == 2 && descr == _list_append) {
+        assert(_Py_OPCODE(instr[-1]) == PRECALL_METHOD);
+        cache[-1].obj.obj = (PyObject *)_set_add;
+        *instr = _Py_MAKECODEUNIT(CALL_NO_KW_SET_ADD, _Py_OPARG(*instr));
         return 0;
     }
 
