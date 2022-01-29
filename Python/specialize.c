@@ -1437,7 +1437,7 @@ specialize_method_descriptor(
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_LIST_APPEND, _Py_OPARG(*instr));
         return 0;
     }
-    if (nargs == 2 && descr == _list_append) {
+    if (nargs == 2 && descr == _set_add) {
         assert(_Py_OPCODE(instr[-1]) == PRECALL_METHOD);
         cache[-1].obj.obj = (PyObject *)_set_add;
         *instr = _Py_MAKECODEUNIT(CALL_NO_KW_SET_ADD, _Py_OPARG(*instr));
