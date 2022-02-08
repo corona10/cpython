@@ -21,6 +21,7 @@ Data members:
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
+#include "pycore_mimalloc.h"      // MI_SECURE, MI_DEBUG
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IS_GC()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
@@ -2018,9 +2019,10 @@ static PyTypeObject MallocInfoType;
 
 static PyStructSequence_Field malloc_info_fields[] = {
     {"allocator", "current memory allocator"},
-    {"with_freelists", "uses freelists"},
     {"with_pymalloc", "supports pymalloc (aka obmalloc)"},
     {"with_mimalloc", "supports mimalloc"},
+    {"mimalloc_secure", "mimalloc security level"},
+    {"mimalloc_debug", "mimalloc debug level"},
     {0}
 };
 
@@ -2028,7 +2030,7 @@ static PyStructSequence_Desc malloc_info_desc = {
     "sys._malloc_info",     /* name */
     malloc_info__doc__ ,    /* doc */
     malloc_info_fields,     /* fields */
-    4
+    5
 };
 
 static PyObject *
@@ -2044,6 +2046,9 @@ make_malloc_info(void)
         return NULL;
     }
 
+#define SetIntItem(flag) \
+    PyStructSequence_SET_ITEM(malloc_info, pos++, PyLong_FromLong(flag))
+
     name = _PyMem_GetCurrentAllocatorName();
     if (name == NULL) {
         name = "unknown";
@@ -2055,13 +2060,6 @@ make_malloc_info(void)
     }
 
     PyStructSequence_SET_ITEM(malloc_info, pos++, v);
-
-#ifdef WITH_FREELISTS
-    v = Py_True;
-#else
-    v = Py_False;
-#endif
-    PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
 
 #ifdef WITH_PYMALLOC
     v = Py_True;
@@ -2076,6 +2074,11 @@ make_malloc_info(void)
     v = Py_False;
 #endif
     PyStructSequence_SET_ITEM(malloc_info, pos++, _Py_NewRef(v));
+
+    SetIntItem(MI_SECURE);
+    SetIntItem(MI_DEBUG);
+
+#undef SetIntItem
 
     if (PyErr_Occurred()) {
         Py_CLEAR(malloc_info);
