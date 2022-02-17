@@ -15,7 +15,6 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
-#define NEEDS_PY_IDENTIFIER
 
 #define PY_SSIZE_T_CLEAN
 
@@ -25,11 +24,6 @@
 
 #include <stdbool.h>
 
-_Py_IDENTIFIER(NFC);
-_Py_IDENTIFIER(NFD);
-_Py_IDENTIFIER(NFKC);
-_Py_IDENTIFIER(NFKD);
-
 /*[clinic input]
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '<not used>'
@@ -37,6 +31,52 @@ class unicodedata.UCD 'PreviousDBVersion *' '<not used>'
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e47113e05924be43]*/
 
 /* character properties */
+
+
+static struct PyModuleDef unicodedata_module;
+
+typedef struct {
+    PyObject *str_NFC;
+    PyObject *str_NFD;
+    PyObject *str_NFKC;
+    PyObject *str_NFKD;
+} unicodedata_state;
+
+static inline unicodedata_state*
+get_unicodedata_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (unicodedata_state *)state;
+}
+
+static int
+unicodedata_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    unicodedata_state *module_state = get_unicodedata_state(module);
+    Py_VISIT(module_state->str_NFC);
+    Py_VISIT(module_state->str_NFD);
+    Py_VISIT(module_state->str_NFKC);
+    Py_VISIT(module_state->str_NFKD);
+    return 0;
+}
+
+static int
+unicodedata_clear(PyObject *module)
+{
+    unicodedata_state *module_state = get_unicodedata_state(module);
+    Py_CLEAR(module_state->str_NFC);
+    Py_CLEAR(module_state->str_NFD);
+    Py_CLEAR(module_state->str_NFKC);
+    Py_CLEAR(module_state->str_NFKD);
+    return 0;
+}
+
+static void
+unicodedata_free(void *module)
+{
+   unicodedata_clear((PyObject *)module);
+}
 
 typedef struct {
     const unsigned char category;       /* index into
@@ -890,17 +930,19 @@ unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
     PyObject *cmp;
     int match = 0;
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    printf("hi\n");t
+    unicodedata_state *state = PyType_GetModuleState(Py_TYPE(self));
+    if (_PyUnicode_EQ(form, state->str_NFC)) {
         nfc = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    else if (_PyUnicode_EQ(form, state->str_NFKC)) {
         nfc = true;
         k = true;
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    else if (_PyUnicode_EQ(form, state->str_NFD)) {
         /* matches default values for `nfc` and `k` */
     }
-    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    else if (_PyUnicode_EQ(form, state->str_NFKD)) {
         k = true;
     }
     else {
@@ -953,7 +995,8 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         return input;
     }
 
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+    unicodedata_state *state = PyType_GetModuleState(Py_TYPE(self));
+    if (_PyUnicode_EQ(form, state->str_NFC)) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
             Py_INCREF(input);
@@ -961,7 +1004,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfc_nfkc(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+    if (_PyUnicode_EQ(form, state->str_NFKC)) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
             Py_INCREF(input);
@@ -969,7 +1012,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfc_nfkc(self, input, 1);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+    if (_PyUnicode_EQ(form, state->str_NFD)) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
             Py_INCREF(input);
@@ -977,7 +1020,7 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
         }
         return nfd_nfkd(self, input, 0);
     }
-    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+    if (_PyUnicode_EQ(form, state->str_NFKD)) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
             Py_INCREF(input);
@@ -1486,6 +1529,15 @@ this database is based on the UnicodeData.txt file version\n\
 The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format " UNIDATA_VERSION ".");
 
+#define ADD_INTERNED(state, string)                      \
+do {                                                     \
+    PyObject *tmp = PyUnicode_InternFromString(#string); \
+    if (tmp == NULL) {                                   \
+        return -1;                                       \
+    }                                                    \
+    state->str_ ## string = tmp;                         \
+} while (0)
+
 static int
 unicodedata_exec(PyObject *module)
 {
@@ -1493,7 +1545,14 @@ unicodedata_exec(PyObject *module)
         return -1;
     }
 
-    PyTypeObject *ucd_type = (PyTypeObject *)PyType_FromSpec(&ucd_type_spec);
+    unicodedata_state *state = get_unicodedata_state(module);
+    /* Add interned strings */
+    ADD_INTERNED(state, NFC);
+    ADD_INTERNED(state, NFD);
+    ADD_INTERNED(state, NFKC);
+    ADD_INTERNED(state, NFKD);
+
+    PyTypeObject *ucd_type = (PyTypeObject *)PyType_FromModuleAndSpec(module, &ucd_type_spec, NULL);
     if (ucd_type == NULL) {
         return -1;
     }
@@ -1535,11 +1594,14 @@ static PyModuleDef_Slot unicodedata_slots[] = {
 };
 
 static struct PyModuleDef unicodedata_module = {
-    PyModuleDef_HEAD_INIT,
+    .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "unicodedata",
     .m_doc = unicodedata_docstring,
-    .m_size = 0,
+    .m_size = sizeof(unicodedata_state),
     .m_methods = unicodedata_functions,
+    .m_traverse = unicodedata_traverse,
+    .m_clear = unicodedata_clear,
+    .m_free = unicodedata_free,
     .m_slots = unicodedata_slots,
 };
 
