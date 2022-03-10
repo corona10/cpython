@@ -3555,6 +3555,7 @@ _PySys_Fini(PyInterpreterState *interp)
 #ifdef __EMSCRIPTEN__
         Py_CLEAR(EmscriptenInfoType);
 #endif
+        _PyStructSequence_FiniType(&MallocInfoType);
     }
 }
 
