@@ -3242,6 +3242,18 @@ class OldTestIntFlag(unittest.TestCase):
                 '%(m)s.OFF_C' % {'m': SHORT_MODULE},
                 )
 
+    def test_global_str(self):
+        @enum.global_enum
+        class HeadlightsV(enum.Enum):
+            OFF_V = 0
+            LOW_BEAM_V = auto()
+            HIGH_BEAM_V = auto()
+            FOG_V = auto()
+
+        HeadlightsV.OFF_V._name_ = None
+        self.assertEqual(str(HeadlightsV(0)), "HeadlightsV(0)")
+        self.assertEqual(str(HeadlightsV(1)), "LOW_BEAM_V")
+
     def test_format(self):
         Perm = self.Perm
         self.assertEqual(format(Perm.R, ''), '4')
