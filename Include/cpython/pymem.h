@@ -6,6 +6,7 @@ PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+PyAPI_FUNC(void) PyMem_RawFree_Size(void *ptr, size_t size);
 
 /* Try to get the allocators name set by _PyMem_SetupAllocators(). */
 PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
@@ -63,6 +64,9 @@ typedef struct {
 
     /* release a memory block */
     void (*free) (void *ctx, void *ptr);
+
+    /* release a memory block with pre-known size */
+    void (*free_size) (void *ctx, void *ptr, size_t size);
 } PyMemAllocatorEx;
 
 /* Get the memory block allocator of the specified domain. */

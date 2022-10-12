@@ -93,7 +93,7 @@ static void
 block_free(block *b) {
     while (b) {
         block *next = b->ab_next;
-        PyMem_Free(b);
+        PyMem_Free_Size(b, sizeof(block) + b->ab_size);
         b = next;
     }
 }

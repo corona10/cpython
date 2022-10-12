@@ -83,6 +83,7 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 static void* _PyObject_Malloc(void *ctx, size_t size);
 static void* _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize);
 static void _PyObject_Free(void *ctx, void *p);
+static void _PyObject_Free_Size(void *ctx, void *p, size_t size);
 static void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #endif
 
@@ -133,6 +134,12 @@ _PyMem_RawFree(void *Py_UNUSED(ctx), void *ptr)
     free(ptr);
 }
 
+static void
+_PyMem_RawFree_Size(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
+{
+    free(ptr);
+}
+
 
 #ifdef WITH_MIMALLOC
 
@@ -169,6 +176,12 @@ static void
 _PyMimalloc_Free(void *ctx, void *ptr)
 {
     mi_free(ptr);
+}
+
+static void
+_PyMimalloc_Free_Size(void *ctx, void *ptr, size_t size)
+{
+    mi_free_size(ptr, size);
 }
 
 #endif // WITH_MIMALLOC
@@ -222,12 +235,12 @@ _PyObject_ArenaFree(void *Py_UNUSED(ctx), void *ptr, size_t Py_UNUSED(size))
 }
 #endif
 
-#define MALLOC_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
+#define MALLOC_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree, _PyMem_RawFree_Size}
 #ifdef WITH_MIMALLOC
-#  define MIMALLOC_ALLOC {NULL, _PyMimalloc_Malloc, _PyMimalloc_Calloc, _PyMimalloc_Realloc, _PyMimalloc_Free}
+#  define MIMALLOC_ALLOC {NULL, _PyMimalloc_Malloc, _PyMimalloc_Calloc, _PyMimalloc_Realloc, _PyMimalloc_Free, _PyMimalloc_Free_Size}
 #endif
 #ifdef WITH_PYMALLOC
-#  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
+#  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free, _PyObject_Free_Size}
 #endif
 
 #ifdef WITH_MIMALLOC
@@ -743,6 +756,10 @@ void PyMem_RawFree(void *ptr)
     _PyMem_Raw.free(_PyMem_Raw.ctx, ptr);
 }
 
+void PyMem_RawFree_Size(void *ptr, size_t size)
+{
+    _PyMem_Raw.free_size(_PyMem_Raw.ctx, ptr, size);
+}
 
 void *
 PyMem_Malloc(size_t size)
@@ -784,6 +801,13 @@ PyMem_Free(void *ptr)
 {
     OBJECT_STAT_INC(frees);
     _PyMem.free(_PyMem.ctx, ptr);
+}
+
+void
+PyMem_Free_Size(void *ptr, size_t size)
+{
+    OBJECT_STAT_INC(frees);
+    _PyMem.free_size(_PyMem.ctx, ptr, size);
 }
 
 
@@ -2417,6 +2441,21 @@ _PyObject_Free(void *ctx, void *p)
     if (UNLIKELY(!pymalloc_free(ctx, p))) {
         /* pymalloc didn't allocate this address */
         PyMem_RawFree(p);
+        raw_allocated_blocks--;
+    }
+}
+
+static void
+_PyObject_Free_Size(void *ctx, void *p, size_t size)
+{
+    /* PyObject_Free(NULL) has no effect */
+    if (p == NULL) {
+        return;
+    }
+
+    if (UNLIKELY(!pymalloc_free(ctx, p))) {
+        /* pymalloc didn't allocate this address */
+        PyMem_RawFree_Size(p, size);
         raw_allocated_blocks--;
     }
 }

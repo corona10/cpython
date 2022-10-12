@@ -486,7 +486,7 @@ _PyObject_Call_Prepend(PyThreadState *tstate, PyObject *callable,
                                                     stack, argcount + 1,
                                                     kwargs);
     if (stack != small_stack) {
-        PyMem_Free(stack);
+        PyMem_Free_Size(stack, (argcount + 1) * sizeof(PyObject *));
     }
     return result;
 }
@@ -798,11 +798,12 @@ object_vacall(PyThreadState *tstate, PyObject *base,
     va_end(countva);
 
     /* Copy arguments */
+    size_t stack_size = nargs * sizeof(stack[0]);
     if (nargs <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
     }
     else {
-        stack = PyMem_Malloc(nargs * sizeof(stack[0]));
+        stack = PyMem_Malloc(stack_size);
         if (stack == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -827,7 +828,7 @@ object_vacall(PyThreadState *tstate, PyObject *base,
     result = _PyObject_VectorcallTstate(tstate, callable, stack, nargs, NULL);
 
     if (stack != small_stack) {
-        PyMem_Free(stack);
+        PyMem_Free_Size(stack, stack_size);
     }
     return result;
 }
@@ -984,7 +985,8 @@ _PyStack_UnpackDict(PyThreadState *tstate,
     }
 
     /* Add 1 to support PY_VECTORCALL_ARGUMENTS_OFFSET */
-    PyObject **stack = PyMem_Malloc((1 + nargs + nkwargs) * sizeof(args[0]));
+    size_t stack_size = (1 + nargs + nkwargs) * sizeof(args[0]);
+    PyObject **stack = PyMem_Malloc(stack_size);
     if (stack == NULL) {
         _PyErr_NoMemory(tstate);
         return NULL;
@@ -992,7 +994,7 @@ _PyStack_UnpackDict(PyThreadState *tstate,
 
     PyObject *kwnames = PyTuple_New(nkwargs);
     if (kwnames == NULL) {
-        PyMem_Free(stack);
+        PyMem_Free_Size(stack, stack_size);
         return NULL;
     }
 
