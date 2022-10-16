@@ -8419,7 +8419,7 @@ insert_prefix_instructions(struct compiler *c, basicblock *entryblock,
             }
             ncellsused += 1;
         }
-        PyMem_RawFree(sorted);
+        PyMem_RawFree_Size(sorted, nvars * sizeof(int));
     }
 
     if (nfreevars) {
