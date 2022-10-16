@@ -440,13 +440,13 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         if (str == NULL)
             return NULL;
         memcpy(str, p, len);
-        PyMem_Free(p);
+        PyMem_Free_Size(p, len);
         str += len;
         return str;
     }
 
     result = PyBytes_FromStringAndSize(p, len);
-    PyMem_Free(p);
+    PyMem_Free_Size(p, len);
     *p_result = result;
     return result != NULL ? str : NULL;
 }

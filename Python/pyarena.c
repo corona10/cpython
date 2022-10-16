@@ -135,13 +135,13 @@ _PyArena_New(void)
     arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
     arena->a_cur = arena->a_head;
     if (!arena->a_head) {
-        PyMem_Free((void *)arena);
+        PyMem_Free_Size((void *)arena, sizeof(PyArena));
         return (PyArena*)PyErr_NoMemory();
     }
     arena->a_objects = PyList_New(0);
     if (!arena->a_objects) {
         block_free(arena->a_head);
-        PyMem_Free((void *)arena);
+        PyMem_Free_Size((void *)arena, sizeof(PyArena));
         return (PyArena*)PyErr_NoMemory();
     }
 #if defined(Py_DEBUG)
@@ -174,7 +174,7 @@ _PyArena_Free(PyArena *arena)
     */
 
     Py_DECREF(arena->a_objects);
-    PyMem_Free(arena);
+    PyMem_Free_Size(arena, sizeof(PyArena));
 }
 
 void *

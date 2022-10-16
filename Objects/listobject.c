@@ -356,7 +356,7 @@ list_dealloc(PyListObject *op)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
-        PyMem_Free(op->ob_item);
+        PyMem_Free_Size(op->ob_item, sizeof(PyObject *) * op->allocated);
     }
 #if PyList_MAXFREELIST > 0
     struct _Py_list_state *state = get_list_state();
@@ -604,13 +604,14 @@ _list_clear(PyListObject *a)
         /* Because XDECREF can recursively invoke operations on
            this list, we make it empty first. */
         i = Py_SIZE(a);
+	size_t allocated_size = i * a->allocated * sizeof(PyObject *);
         Py_SET_SIZE(a, 0);
         a->ob_item = NULL;
         a->allocated = 0;
         while (--i >= 0) {
             Py_XDECREF(item[i]);
         }
-        PyMem_Free(item);
+        PyMem_Free_Size(item, allocated_size);
     }
     /* Never fails; the return value can be ignored.
        Note that there is no guarantee that the list is actually empty
@@ -724,7 +725,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     result = 0;
  Error:
     if (recycle != recycle_on_stack)
-        PyMem_Free(recycle);
+        PyMem_Free_Size(recycle, s);
     Py_XDECREF(v_as_SF);
     return result;
 #undef b
@@ -2500,6 +2501,7 @@ fail:
 
 keyfunc_fail:
     final_ob_item = self->ob_item;
+    size_t allocated = Py_SIZE(self) * sizeof(PyObject *);
     i = Py_SIZE(self);
     Py_SET_SIZE(self, saved_ob_size);
     self->ob_item = saved_ob_item;
@@ -2510,7 +2512,7 @@ keyfunc_fail:
         while (--i >= 0) {
             Py_XDECREF(final_ob_item[i]);
         }
-        PyMem_Free(final_ob_item);
+        PyMem_Free_Size(final_ob_item, allocated);
     }
     Py_XINCREF(result);
     return result;
@@ -3004,7 +3006,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             for (i = 0; i < slicelength; i++) {
                 Py_DECREF(garbage[i]);
             }
-            PyMem_Free(garbage);
+            PyMem_Free_Size(garbage, sizeof(PyObject *) * slicelength);
 
             return res;
         }
@@ -3066,7 +3068,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
                 Py_DECREF(garbage[i]);
             }
 
-            PyMem_Free(garbage);
+            PyMem_Free_Size(garbage, slicelength*sizeof(PyObject*));
             Py_DECREF(seq);
 
             return 0;

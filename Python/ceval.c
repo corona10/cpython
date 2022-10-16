@@ -5905,7 +5905,7 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
 fail:
     Py_XDECREF(func);
     Py_XDECREF(kwnames);
-    PyMem_Free(newargs);
+    PyMem_Free_Size(newargs, sizeof(PyObject *)*(kwcount+argcount));
     Py_DECREF(defaults);
     return res;
 }

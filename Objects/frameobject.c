@@ -651,7 +651,7 @@ add_load_fast_null_checks(PyCodeObject *co)
         Py_CLEAR(co->_co_cached->_co_cellvars);
         Py_CLEAR(co->_co_cached->_co_freevars);
         Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
+        PyMem_Free_Size(co->_co_cached, sizeof(_PyCoCached));
         co->_co_cached = NULL;
     }
 }
@@ -760,13 +760,13 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         PyErr_Format(PyExc_ValueError,
                     "line %d comes after the current code block",
                     (int)l_new_lineno);
-        PyMem_Free(lines);
+        PyMem_Free_Size(lines, sizeof(int));
         return -1;
     }
 
     int64_t *stacks = mark_stacks(f->f_frame->f_code, len);
     if (stacks == NULL) {
-        PyMem_Free(lines);
+        PyMem_Free_Size(lines, sizeof(int));
         return -1;
     }
 
@@ -799,8 +799,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             }
         }
     }
-    PyMem_Free(stacks);
-    PyMem_Free(lines);
+    PyMem_Free_Size(stacks, sizeof(int64_t) * len);
+    PyMem_Free_Size(lines, sizeof(int));
     if (err) {
         PyErr_SetString(PyExc_ValueError, msg);
         return -1;

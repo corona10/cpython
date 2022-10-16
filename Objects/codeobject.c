@@ -1639,7 +1639,7 @@ code_dealloc(PyCodeObject *co)
             }
         }
 
-        PyMem_Free(co_extra);
+        PyMem_Free_Size(co_extra, sizeof(_PyCodeObjectExtra));
     }
 
     Py_XDECREF(co->co_consts);
@@ -1656,13 +1656,13 @@ code_dealloc(PyCodeObject *co)
         Py_XDECREF(co->_co_cached->_co_cellvars);
         Py_XDECREF(co->_co_cached->_co_freevars);
         Py_XDECREF(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
+        PyMem_Free_Size(co->_co_cached, sizeof(_PyCoCached));
     }
     if (co->co_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*)co);
     }
     if (co->_co_linearray) {
-        PyMem_Free(co->_co_linearray);
+        PyMem_Free_Size(co->_co_linearray, Py_SIZE(co) * co->_co_linearray_entry_size);
     }
     if (co->co_warmup == 0) {
         _Py_QuickenedCount--;
@@ -2237,7 +2237,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         Py_CLEAR(co->_co_cached->_co_cellvars);
         Py_CLEAR(co->_co_cached->_co_freevars);
         Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
+        PyMem_Free_Size(co->_co_cached, sizeof(_PyCoCached));
         co->_co_cached = NULL;
     }
     co->co_extra = NULL;
@@ -2246,7 +2246,7 @@ _PyStaticCode_Dealloc(PyCodeObject *co)
         co->co_weakreflist = NULL;
     }
     if (co->_co_linearray) {
-        PyMem_Free(co->_co_linearray);
+        PyMem_Free_Size(co->_co_linearray, Py_SIZE(co) * co->_co_linearray_entry_size);
         co->_co_linearray = NULL;
     }
 }
