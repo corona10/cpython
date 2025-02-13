@@ -65,6 +65,10 @@ jobs:
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
             runner: ubuntu-22.04-arm
+          - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
+            runner: ubuntu-24.04
+            free-threading: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -110,6 +114,15 @@ jobs:
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           CC=clang-19 ./configure --with-tail-call-interp
+          make all --jobs 4
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: Native Linux with free-threading (release)
+        if: runner.os == 'Linux' && matrix.free-threading == 'true'
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-19 ./configure --with-tail-call-interp --disable-gil
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
