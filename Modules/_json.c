@@ -17,6 +17,10 @@
 
 #include <stdbool.h>              // bool
 
+/*[clinic input]
+module _json
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
