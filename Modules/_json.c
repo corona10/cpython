@@ -17,6 +17,8 @@
 
 #include <stdbool.h>              // bool
 
+#include "clinic/_json.c.h"
+
 /*[clinic input]
 module _json
 [clinic start generated code]*/
@@ -76,8 +78,6 @@ static PyMemberDef encoder_members[] = {
 
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
-static PyObject *
-py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
@@ -676,14 +676,18 @@ py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
     return _build_rval_index_tuple(rval, next_end);
 }
 
-PyDoc_STRVAR(pydoc_encode_basestring_ascii,
-    "encode_basestring_ascii(string) -> string\n"
-    "\n"
-    "Return an ASCII-only JSON representation of a Python string"
-);
+
+/*[clinic input]
+_json.encode_basestring_ascii
+    pystr: object
+    /
+
+Return an ASCII-only JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
+_json_encode_basestring_ascii(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=e5ab8fbc5f216536 input=c49d7098d0d29952]*/
 {
     PyObject *rval;
     /* Return an ASCII-only JSON representation of a Python string */
@@ -1360,7 +1364,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
-        if (f == py_encode_basestring_ascii) {
+        if (f == _json_encode_basestring_ascii) {
             s->fast_encode = write_escaped_ascii;
         }
         else if (f == py_encode_basestring) {
@@ -1991,10 +1995,7 @@ static PyType_Spec PyEncoderType_spec = {
 };
 
 static PyMethodDef speedups_methods[] = {
-    {"encode_basestring_ascii",
-        py_encode_basestring_ascii,
-        METH_O,
-        pydoc_encode_basestring_ascii},
+    _JSON_ENCODE_BASESTRING_ASCII_METHODDEF
     {"encode_basestring",
         py_encode_basestring,
         METH_O,
