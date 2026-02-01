@@ -517,7 +517,7 @@ jobs:
           -x test_subprocess \
           -x test_signal \
           -x test_sysconfig
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       if: always()
       with:
         name: hypothesis-example-db
@@ -665,7 +665,7 @@ jobs:
           sanitizer: ${{ matrix.sanitizer }}
       - name: Upload crash
         if: failure() && steps.build.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.sanitizer }}-artifacts
           path: ./out/artifacts
