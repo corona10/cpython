@@ -1249,14 +1249,13 @@ _Py_dict_lookup() is general-purpose, and may return DKIX_ERROR if (and only if)
 comparison raises an exception.
 When the key isn't found a DKIX_EMPTY is returned.
 */
-Py_ssize_t
-_Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
+static inline Py_ssize_t
+dict_lookup_impl(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
 {
     PyDictKeysObject *dk;
     DictKeysKind kind;
     Py_ssize_t ix;
 
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
 start:
     dk = mp->ma_keys;
     kind = dk->dk_kind;
@@ -1313,6 +1312,19 @@ start:
     }
 
     return ix;
+}
+
+Py_ssize_t
+_Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+    return dict_lookup_impl(mp, key, hash, value_addr);
+}
+
+Py_ssize_t
+_Py_frozendict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
+{
+    return dict_lookup_impl(mp, key, hash, value_addr);
 }
 
 #ifdef Py_GIL_DISABLED
@@ -2492,11 +2504,11 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
  * Returns 1 if the key is present, 0 if the key is missing, and -1 if an
  * exception occurred.
 */
-int
+static inline int
 _PyFrozenDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
 {
     PyObject *value;
-    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
+    Py_ssize_t ix = _Py_frozendict_lookup(op, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     if (ix == DKIX_ERROR) {
         *result = NULL;
