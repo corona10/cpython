@@ -6003,7 +6003,7 @@
             break;
         }
 
-        case _GUARD_NOS_FROZEN_DICT_r02: {
+        case _GUARD_NOS_FROZENDICT_r02: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef nos;
@@ -6023,7 +6023,7 @@
             break;
         }
 
-        case _GUARD_NOS_FROZEN_DICT_r12: {
+        case _GUARD_NOS_FROZENDICT_r12: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef nos;
@@ -6045,7 +6045,7 @@
             break;
         }
 
-        case _GUARD_NOS_FROZEN_DICT_r22: {
+        case _GUARD_NOS_FROZENDICT_r22: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef nos;
@@ -6067,7 +6067,7 @@
             break;
         }
 
-        case _GUARD_NOS_FROZEN_DICT_r33: {
+        case _GUARD_NOS_FROZENDICT_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef nos;
@@ -6223,7 +6223,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_FROZEN_DICT_r23: {
+        case _BINARY_OP_SUBSCR_FROZENDICT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef sub_st;

@@ -602,7 +602,7 @@ dummy_func(
             BINARY_OP_SUBSCR_STR_INT,
             BINARY_OP_SUBSCR_USTR_INT,
             BINARY_OP_SUBSCR_DICT,
-            BINARY_OP_SUBSCR_FROZEN_DICT,
+            BINARY_OP_SUBSCR_FROZENDICT,
             BINARY_OP_SUBSCR_GETITEM,
             BINARY_OP_INPLACE_ADD_UNICODE,
             BINARY_OP_EXTEND,
@@ -1062,7 +1062,7 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
-        op(_GUARD_NOS_FROZEN_DICT, (nos, unused -- nos, unused)) {
+        op(_GUARD_NOS_FROZENDICT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             EXIT_IF(!PyFrozenDict_CheckExact(o));
         }
@@ -1075,8 +1075,8 @@ dummy_func(
         macro(BINARY_OP_SUBSCR_DICT) =
             _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
-        macro(BINARY_OP_SUBSCR_FROZEN_DICT) =
-            _GUARD_NOS_FROZEN_DICT + unused/5 + _BINARY_OP_SUBSCR_FROZEN_DICT + POP_TOP + POP_TOP;
+        macro(BINARY_OP_SUBSCR_FROZENDICT) =
+            _GUARD_NOS_FROZENDICT + unused/5 + _BINARY_OP_SUBSCR_FROZENDICT + POP_TOP + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
@@ -1098,7 +1098,7 @@ dummy_func(
             INPUTS_DEAD();
         }
 
-        op(_BINARY_OP_SUBSCR_FROZEN_DICT, (dict_st, sub_st -- res, ds, ss)) {
+        op(_BINARY_OP_SUBSCR_FROZENDICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 

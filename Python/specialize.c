@@ -2292,7 +2292,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 return;
             }
             if (PyFrozenDict_CheckExact(lhs)) {
-                specialize(instr, BINARY_OP_SUBSCR_FROZEN_DICT);
+                specialize(instr, BINARY_OP_SUBSCR_FROZENDICT);
                 return;
             }
             if (PyList_CheckExact(lhs) && PySlice_Check(rhs)) {

@@ -139,7 +139,7 @@ extern "C" {
 #define BINARY_OP_MULTIPLY_FLOAT               133
 #define BINARY_OP_MULTIPLY_INT                 134
 #define BINARY_OP_SUBSCR_DICT                  135
-#define BINARY_OP_SUBSCR_FROZEN_DICT           136
+#define BINARY_OP_SUBSCR_FROZENDICT            136
 #define BINARY_OP_SUBSCR_GETITEM               137
 #define BINARY_OP_SUBSCR_LIST_INT              138
 #define BINARY_OP_SUBSCR_LIST_SLICE            139

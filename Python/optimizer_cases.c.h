@@ -1101,7 +1101,7 @@
             break;
         }
 
-        case _GUARD_NOS_FROZEN_DICT: {
+        case _GUARD_NOS_FROZENDICT: {
             break;
         }
 
@@ -1135,7 +1135,7 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_FROZEN_DICT: {
+        case _BINARY_OP_SUBSCR_FROZENDICT: {
             JitOptRef res;
             JitOptRef ds;
             JitOptRef ss;

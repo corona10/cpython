@@ -1815,7 +1815,7 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_frozen_dict()
-        self.assert_specialized(binary_subscr_frozen_dict, "BINARY_OP_SUBSCR_FROZEN_DICT")
+        self.assert_specialized(binary_subscr_frozen_dict, "BINARY_OP_SUBSCR_FROZENDICT")
         self.assert_no_opcode(binary_subscr_frozen_dict, "BINARY_OP")
 
         def binary_subscr_frozen_dict_subclass():
@@ -1827,7 +1827,7 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[2], 3)
 
         binary_subscr_frozen_dict_subclass()
-        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_FROZEN_DICT")
+        self.assert_no_opcode(binary_subscr_frozen_dict_subclass, "BINARY_OP_SUBSCR_FROZENDICT")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):

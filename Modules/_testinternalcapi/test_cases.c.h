@@ -694,16 +694,16 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_SUBSCR_FROZEN_DICT) {
+        TARGET(BINARY_OP_SUBSCR_FROZENDICT) {
             #if _Py_TAIL_CALL_INTERP
-            int opcode = BINARY_OP_SUBSCR_FROZEN_DICT;
+            int opcode = BINARY_OP_SUBSCR_FROZENDICT;
             (void)(opcode);
             #endif
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 6;
-            INSTRUCTION_STATS(BINARY_OP_SUBSCR_FROZEN_DICT);
+            INSTRUCTION_STATS(BINARY_OP_SUBSCR_FROZENDICT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5, "incorrect cache size");
             _PyStackRef nos;
             _PyStackRef dict_st;
@@ -712,7 +712,7 @@
             _PyStackRef ds;
             _PyStackRef ss;
             _PyStackRef value;
-            // _GUARD_NOS_FROZEN_DICT
+            // _GUARD_NOS_FROZENDICT
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
@@ -723,7 +723,7 @@
                 }
             }
             /* Skip 5 cache entries */
-            // _BINARY_OP_SUBSCR_FROZEN_DICT
+            // _BINARY_OP_SUBSCR_FROZENDICT
             {
                 sub_st = stack_pointer[-1];
                 dict_st = nos;
