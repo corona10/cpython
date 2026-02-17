@@ -1101,6 +1101,10 @@
             break;
         }
 
+        case _GUARD_NOS_FROZEN_DICT: {
+            break;
+        }
+
         case _GUARD_TOS_DICT: {
             JitOptRef tos;
             tos = stack_pointer[-1];
@@ -1122,6 +1126,22 @@
             res = sym_new_not_null(ctx);
             ds = dict_st;
             ss = sub_st;
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = ds;
+            stack_pointer[0] = ss;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_FROZEN_DICT: {
+            JitOptRef res;
+            JitOptRef ds;
+            JitOptRef ss;
+            res = sym_new_not_null(ctx);
+            ds = sym_new_not_null(ctx);
+            ss = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
             stack_pointer[-1] = ds;

@@ -2488,6 +2488,47 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
     return _PyDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
 }
 
+/* Gets an item and provides a new reference if the value is present.
+ * Returns 1 if the key is present, 0 if the key is missing, and -1 if an
+ * exception occurred.
+*/
+int
+_PyFrozenDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result)
+{
+    PyObject *value;
+    Py_ssize_t ix = _Py_dict_lookup(op, key, hash, &value);
+    assert(ix >= 0 || value == NULL);
+    if (ix == DKIX_ERROR) {
+        *result = NULL;
+        return -1;
+    }
+    if (value == NULL) {
+        *result = NULL;
+        return 0;  // missing key
+    }
+    *result = Py_NewRef(value);
+    return 1;  // key is present
+}
+
+int
+_PyFrozenDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
+{
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        *result = NULL;
+        return -1;
+    }
+
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        dict_unhashable_type(key);
+        *result = NULL;
+        return -1;
+    }
+
+    return _PyFrozenDict_GetItemRef_KnownHash((PyDictObject *)op, key, hash, result);
+}
+
 int
 _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result)
 {

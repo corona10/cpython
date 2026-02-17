@@ -602,6 +602,7 @@ dummy_func(
             BINARY_OP_SUBSCR_STR_INT,
             BINARY_OP_SUBSCR_USTR_INT,
             BINARY_OP_SUBSCR_DICT,
+            BINARY_OP_SUBSCR_FROZEN_DICT,
             BINARY_OP_SUBSCR_GETITEM,
             BINARY_OP_INPLACE_ADD_UNICODE,
             BINARY_OP_EXTEND,
@@ -1061,6 +1062,11 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
+        op(_GUARD_NOS_FROZEN_DICT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyFrozenDict_CheckExact(o));
+        }
+
         op(_GUARD_TOS_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyDict_CheckExact(o));
@@ -1069,14 +1075,37 @@ dummy_func(
         macro(BINARY_OP_SUBSCR_DICT) =
             _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT + POP_TOP + POP_TOP;
 
+        macro(BINARY_OP_SUBSCR_FROZEN_DICT) =
+            _GUARD_NOS_FROZEN_DICT + unused/5 + _BINARY_OP_SUBSCR_FROZEN_DICT + POP_TOP + POP_TOP;
+
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res, ds, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_CheckExact(dict));
+            assert(PyAnyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             int rc = PyDict_GetItemRef(dict, sub, &res_o);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
+            }
+            if (rc <= 0) {
+                ERROR_NO_POP();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            ds = dict_st;
+            ss = sub_st;
+            INPUTS_DEAD();
+        }
+
+        op(_BINARY_OP_SUBSCR_FROZEN_DICT, (dict_st, sub_st -- res, ds, ss)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
+
+            assert(PyFrozenDict_CheckExact(dict));
+            STAT_INC(BINARY_OP, hit);
+            PyObject *res_o;
+            int rc = _PyFrozenDict_GetItemRef(dict, sub, &res_o);
             if (rc == 0) {
                 _PyErr_SetKeyError(sub);
             }
