@@ -1321,7 +1321,7 @@ _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **valu
     return dict_lookup_impl(mp, key, hash, value_addr);
 }
 
-Py_ssize_t
+static Py_ssize_t
 _Py_frozendict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
 {
     return dict_lookup_impl(mp, key, hash, value_addr);
