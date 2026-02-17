@@ -1,0 +1,2 @@
+Update specialzier to support frozendict with BINARY_SUBSCR. Patch by
+Donghee Na.
