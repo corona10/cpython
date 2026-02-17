@@ -2513,7 +2513,7 @@ _PyFrozenDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t ha
 int
 _PyFrozenDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
 {
-    if (!PyDict_Check(op)) {
+    if (!PyFrozenDict_Check(op)) {
         PyErr_BadInternalCall();
         *result = NULL;
         return -1;
