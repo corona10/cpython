@@ -6191,7 +6191,7 @@
             dict_st = _stack_item_0;
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            assert(PyAnyDict_CheckExact(dict));
+            assert(PyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             stack_pointer[0] = dict_st;
