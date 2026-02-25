@@ -1372,10 +1372,10 @@ dummy_func(void) {
     }
 
     op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
-        if (sym_matches_type(tos, &PySet_Type) ||
-            sym_matches_type(tos, &PyFrozenSet_Type))
-        {
+        PyTypeObject *tp = sym_get_type(tos);
+        if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
             ADD_OP(_NOP, 0, 0);
+            sym_set_type(tos, tp);
         }
     }
 
