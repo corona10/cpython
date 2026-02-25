@@ -46,6 +46,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_recorded_gen_func(SYM, VAL) _Py_uop_sym_set_recorded_gen_func(ctx, SYM, VAL)
 #define sym_get_probable_func_code _Py_uop_sym_get_probable_func_code
 #define sym_get_probable_value _Py_uop_sym_get_probable_value
+#define sym_get_probable_type _Py_uop_sym_get_probable_type
 #define sym_set_stack_depth(DEPTH, SP) _Py_uop_sym_set_stack_depth(ctx, DEPTH, SP)
 
 extern int
@@ -1359,7 +1360,6 @@ dummy_func(void) {
         PyTypeObject *tp = sym_get_type(nos);
         if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
-            sym_set_type(nos, tp);
         }
     }
 
@@ -1367,16 +1367,62 @@ dummy_func(void) {
         PyTypeObject *tp = sym_get_type(tos);
         if (tp == &PyDict_Type || tp == &PyFrozenDict_Type) {
             ADD_OP(_NOP, 0, 0);
-            sym_set_type(tos, tp);
         }
+        else {
+            // Narrowing the guard based on the probable type.
+            tp = sym_get_probable_type(tos);
+            if (tp == &PyDict_Type) {
+                ADD_OP(_GUARD_TOS_DICT, 0, 0);
+            }
+            else if (tp == &PyFrozenDict_Type) {
+                ADD_OP(_GUARD_TOS_FROZENDICT, 0, 0);
+            }
+        }
+    }
+
+    op(_GUARD_TOS_DICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyDict_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyDict_Type);
+    }
+
+    op(_GUARD_TOS_FROZENDICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyFrozenDict_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyFrozenDict_Type);
     }
 
     op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
         PyTypeObject *tp = sym_get_type(tos);
         if (tp == &PySet_Type || tp == &PyFrozenSet_Type) {
             ADD_OP(_NOP, 0, 0);
-            sym_set_type(tos, tp);
         }
+        else {
+            // Narrowing the guard based on the probable type.
+            tp = sym_get_probable_type(tos);
+            if (tp == &PySet_Type) {
+                ADD_OP(_GUARD_TOS_SET, 0, 0);
+            }
+            else if (tp == &PyFrozenSet_Type) {
+                ADD_OP(_GUARD_TOS_FROZENSET, 0, 0);
+            }
+        }
+    }
+
+    op(_GUARD_TOS_SET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PySet_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(tos, &PySet_Type);
+    }
+
+    op(_GUARD_TOS_FROZENSET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyFrozenSet_Type)) {
+            ADD_OP(_NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyFrozenSet_Type);
     }
 
     op(_GUARD_TOS_SLICE, (tos -- tos)) {
