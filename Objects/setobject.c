@@ -2770,21 +2770,36 @@ set_init(PyObject *so, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
 
-    if (_PyObject_IsUniquelyReferenced((PyObject *)self) && self->fill == 0) {
-        self->hash = -1;
-        if (iterable == NULL) {
-            return 0;
-        }
-        return set_update_local(self, iterable);
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)self) || self->fill != 0) {
+        goto shared;
     }
+
+    _PyObject_GC_UNTRACK(self);
+    // Double-check that the object is still uniquely referenced after untracking it.
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)self)) {
+        _PyObject_GC_TRACK(self);
+        goto shared;
+    }
+
+    self->hash = -1;
+    int rv = 0;
+    if (iterable != NULL) {
+        rv = set_update_local(self, iterable);
+    }
+    _PyObject_GC_TRACK(self);
+    return rv;
+
+shared:
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (self->fill)
+    if (self->fill) {
         set_clear_internal((PyObject*)self);
+    }
     self->hash = -1;
     Py_END_CRITICAL_SECTION();
 
-    if (iterable == NULL)
+    if (iterable == NULL) {
         return 0;
+    }
     return set_update_internal(self, iterable);
 }
 
