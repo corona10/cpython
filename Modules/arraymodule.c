@@ -1002,13 +1002,14 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
         ihigh = ilow;
     else if (ihigh > Py_SIZE(a))
         ihigh = Py_SIZE(a);
-    np = (arrayobject *) newarrayobject(state->ArrayType, ihigh - ilow, a->ob_descr);
+    np = (arrayobject *) newarrayobject_untracked(state->ArrayType, ihigh - ilow, a->ob_descr);
     if (np == NULL)
         return NULL;
     if (ihigh > ilow) {
         memcpy(np->ob_item, a->ob_item + ilow * a->ob_descr->itemsize,
                (ihigh-ilow) * a->ob_descr->itemsize);
     }
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -1079,7 +1080,7 @@ array_concat(PyObject *op, PyObject *bb)
         return PyErr_NoMemory();
     }
     size = Py_SIZE(a) + Py_SIZE(b);
-    np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
+    np = (arrayobject *) newarrayobject_untracked(state->ArrayType, size, a->ob_descr);
     if (np == NULL) {
         return NULL;
     }
@@ -1090,6 +1091,7 @@ array_concat(PyObject *op, PyObject *bb)
         memcpy(np->ob_item + Py_SIZE(a)*a->ob_descr->itemsize,
                b->ob_item, Py_SIZE(b)*b->ob_descr->itemsize);
     }
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 #undef b
 }
@@ -1107,16 +1109,19 @@ array_repeat(PyObject *op, Py_ssize_t n)
         return PyErr_NoMemory();
     }
     Py_ssize_t size = array_length * n;
-    arrayobject* np = (arrayobject *) newarrayobject(state->ArrayType, size, a->ob_descr);
+    arrayobject* np = (arrayobject *) newarrayobject_untracked(state->ArrayType, size, a->ob_descr);
     if (np == NULL)
         return NULL;
-    if (size == 0)
+    if (size == 0) {
+        _PyObject_GC_TRACK(np);
         return (PyObject *)np;
+    }
 
     const Py_ssize_t oldbytes = array_length * a->ob_descr->itemsize;
     const Py_ssize_t newbytes = oldbytes * n;
     _PyBytes_RepeatBuffer(np->ob_item, newbytes, a->ob_item, oldbytes);
 
+    _PyObject_GC_TRACK(np);
     return (PyObject *)np;
 }
 
@@ -2678,17 +2683,17 @@ array_subscr(PyObject *op, PyObject *item)
             return newarrayobject(state->ArrayType, 0, self->ob_descr);
         }
         else if (step == 1) {
-            PyObject *result = newarrayobject(state->ArrayType,
-                                    slicelength, self->ob_descr);
+            PyObject *result = newarrayobject_untracked(state->ArrayType, slicelength, self->ob_descr);
             if (result == NULL)
                 return NULL;
             memcpy(((arrayobject *)result)->ob_item,
                    self->ob_item + start * itemsize,
                    slicelength * itemsize);
+            _PyObject_GC_TRACK(result);
             return result;
         }
         else {
-            result = newarrayobject(state->ArrayType, slicelength, self->ob_descr);
+            result = newarrayobject_untracked(state->ArrayType, slicelength, self->ob_descr);
             if (!result) return NULL;
 
             ar = (arrayobject*)result;
@@ -2700,6 +2705,7 @@ array_subscr(PyObject *op, PyObject *item)
                        itemsize);
             }
 
+            _PyObject_GC_TRACK(result);
             return result;
         }
     }
