@@ -14,6 +14,7 @@
 #include "pycore_floatobject.h"   // _PY_FLOAT_BIG_ENDIAN
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_tuple.h"         // _PyTuple_FromPairSteal
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
@@ -752,7 +753,8 @@ class array.array "arrayobject *" "ArrayType"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5c29edf59f176a3]*/
 
 static PyObject *
-newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *descr)
+newarrayobject_untracked(PyTypeObject *type, Py_ssize_t size,
+                         const struct arraydescr *descr)
 {
     arrayobject *op;
     size_t nbytes;
@@ -767,7 +769,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
         return PyErr_NoMemory();
     }
     nbytes = size * descr->itemsize;
-    op = (arrayobject *) type->tp_alloc(type, 0);
+    op = (arrayobject *) _PyType_AllocNoTrack(type, 0);
     if (op == NULL) {
         return NULL;
     }
@@ -787,6 +789,16 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
     }
     op->ob_exports = 0;
     return (PyObject *) op;
+}
+
+static PyObject *
+newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *descr)
+{
+    PyObject *op = newarrayobject_untracked(type, size, descr);
+    if (op != NULL) {
+        _PyObject_GC_TRACK(op);
+    }
+    return op;
 }
 
 static PyObject *
@@ -2973,7 +2985,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             else
                 len = 0;
 
-            a = newarrayobject(type, len, descr);
+            a = newarrayobject_untracked(type, len, descr);
             if (a == NULL) {
                 Py_XDECREF(it);
                 return NULL;
@@ -3039,6 +3051,8 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 }
                 Py_DECREF(it);
             }
+            // Track only once fully built.
+            _PyObject_GC_TRACK(a);
             return a;
         }
     }
