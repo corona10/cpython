@@ -3160,7 +3160,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_methods, array_methods},
     {Py_tp_members, array_members},
     {Py_tp_getset, array_getsets},
-    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_alloc, _PyType_AllocNoTrack},
     {Py_tp_new, array_new},
     {Py_tp_traverse, _PyObject_VisitType},
 
