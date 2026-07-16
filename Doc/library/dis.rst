@@ -1205,6 +1205,14 @@ iterations of the loop.
    Works as :opcode:`BUILD_TUPLE`, but creates a set.
 
 
+.. opcode:: BUILD_FROZENSET (count)
+
+   Works as :opcode:`BUILD_TUPLE`, but creates a frozenset.
+   Used to implement frozenset displays such as ``f{1, 2, 3}``.
+
+   .. versionadded:: 3.16
+
+
 .. opcode:: BUILD_MAP (count)
 
    Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
@@ -1214,6 +1222,14 @@ iterations of the loop.
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
       empty dictionary pre-sized to hold *count* items.
+
+
+.. opcode:: BUILD_FROZENMAP (count)
+
+   Works as :opcode:`BUILD_MAP`, but creates a :class:`frozendict`.
+   Used to implement frozendict displays such as ``f{1: 2}``.
+
+   .. versionadded:: 3.16
 
 
 .. opcode:: BUILD_STRING (count)
@@ -1883,6 +1899,12 @@ iterations of the loop.
    |                                   | statement. The argument is a tuple|
    |                                   | of the type alias's name,         |
    |                                   | type parameters, and value.       |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_BUILD_FROZENSET``     | Converts a freshly-built set to   |
+   |                                   | a frozenset                       |
+   +-----------------------------------+-----------------------------------+
+   | ``INTRINSIC_BUILD_FROZENDICT``    | Converts a freshly-built dict to  |
+   |                                   | a frozendict                      |
    +-----------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12

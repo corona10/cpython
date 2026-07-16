@@ -74,6 +74,10 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BINARY_SLICE:
             return 3;
+        case BUILD_FROZENMAP:
+            return oparg*2;
+        case BUILD_FROZENSET:
+            return oparg;
         case BUILD_INTERPOLATION:
             return 2 + (oparg & 1);
         case BUILD_LIST:
@@ -568,6 +572,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BINARY_OP_SUBTRACT_INT:
             return 1;
         case BINARY_SLICE:
+            return 1;
+        case BUILD_FROZENMAP:
+            return 1;
+        case BUILD_FROZENSET:
             return 1;
         case BUILD_INTERPOLATION:
             return 1;
@@ -1118,6 +1126,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
     [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG },
     [BINARY_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BUILD_FROZENMAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BUILD_FROZENSET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_INTERPOLATION] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1373,6 +1383,8 @@ _PyOpcode_macro_expansion[256] = {
     [BINARY_OP_SUBTRACT_FLOAT] = { .nuops = 5, .uops = { { _GUARD_TOS_FLOAT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_FLOAT, OPARG_SIMPLE, 0 }, { _BINARY_OP_SUBTRACT_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 }, { _POP_TOP_FLOAT, OPARG_SIMPLE, 5 } } },
     [BINARY_OP_SUBTRACT_INT] = { .nuops = 5, .uops = { { _GUARD_TOS_INT, OPARG_SIMPLE, 0 }, { _GUARD_NOS_INT, OPARG_SIMPLE, 0 }, { _BINARY_OP_SUBTRACT_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 }, { _POP_TOP_INT, OPARG_SIMPLE, 5 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, OPARG_SIMPLE, 0 } } },
+    [BUILD_FROZENMAP] = { .nuops = 1, .uops = { { _BUILD_FROZENMAP, OPARG_SIMPLE, 0 } } },
+    [BUILD_FROZENSET] = { .nuops = 1, .uops = { { _BUILD_FROZENSET, OPARG_SIMPLE, 0 } } },
     [BUILD_INTERPOLATION] = { .nuops = 1, .uops = { { _BUILD_INTERPOLATION, OPARG_SIMPLE, 0 } } },
     [BUILD_LIST] = { .nuops = 1, .uops = { { _BUILD_LIST, OPARG_SIMPLE, 0 } } },
     [BUILD_MAP] = { .nuops = 1, .uops = { { _BUILD_MAP, OPARG_SIMPLE, 0 } } },
@@ -1570,6 +1582,8 @@ const char *_PyOpcode_OpName[267] = {
     [BINARY_OP_SUBTRACT_FLOAT] = "BINARY_OP_SUBTRACT_FLOAT",
     [BINARY_OP_SUBTRACT_INT] = "BINARY_OP_SUBTRACT_INT",
     [BINARY_SLICE] = "BINARY_SLICE",
+    [BUILD_FROZENMAP] = "BUILD_FROZENMAP",
+    [BUILD_FROZENSET] = "BUILD_FROZENSET",
     [BUILD_INTERPOLATION] = "BUILD_INTERPOLATION",
     [BUILD_LIST] = "BUILD_LIST",
     [BUILD_MAP] = "BUILD_MAP",
@@ -1827,8 +1841,6 @@ const uint8_t _PyOpcode_Caches[256] = {
 PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
-    [117] = 117,
-    [118] = 118,
     [119] = 119,
     [120] = 120,
     [121] = 121,
@@ -1870,6 +1882,8 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_OP_SUBTRACT_FLOAT] = BINARY_OP,
     [BINARY_OP_SUBTRACT_INT] = BINARY_OP,
     [BINARY_SLICE] = BINARY_SLICE,
+    [BUILD_FROZENMAP] = BUILD_FROZENMAP,
+    [BUILD_FROZENSET] = BUILD_FROZENSET,
     [BUILD_INTERPOLATION] = BUILD_INTERPOLATION,
     [BUILD_LIST] = BUILD_LIST,
     [BUILD_MAP] = BUILD_MAP,
@@ -2088,8 +2102,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
 #endif // NEED_OPCODE_METADATA
 
 #define EXTRA_CASES \
-    case 117: \
-    case 118: \
     case 119: \
     case 120: \
     case 121: \

@@ -78,10 +78,11 @@ extern "C" {
 #define TSTRING_START   62
 #define TSTRING_MIDDLE  63
 #define TSTRING_END     64
-#define COMMENT         65
-#define NL              66
-#define ERRORTOKEN      67
-#define N_TOKENS        69
+#define FBRACE          65
+#define COMMENT         66
+#define NL              67
+#define ERRORTOKEN      68
+#define N_TOKENS        70
 #define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */

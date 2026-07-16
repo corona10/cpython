@@ -3046,6 +3046,52 @@ _PyCode_ConstantKey(PyObject *op)
         Py_DECREF(set);
         return key;
     }
+    else if (PyFrozenDict_CheckExact(op)) {
+        Py_ssize_t pos = 0;
+        PyObject *item_key, *item_value;
+        Py_ssize_t i, len;
+        PyObject *pairs, *set;
+
+        len = PyDict_GET_SIZE(op);
+        pairs = PyTuple_New(len);
+        if (pairs == NULL)
+            return NULL;
+
+        i = 0;
+        while (PyDict_Next(op, &pos, &item_key, &item_value)) {
+            PyObject *const_key = _PyCode_ConstantKey(item_key);
+            if (const_key == NULL) {
+                Py_DECREF(pairs);
+                return NULL;
+            }
+            PyObject *const_value = _PyCode_ConstantKey(item_value);
+            if (const_value == NULL) {
+                Py_DECREF(const_key);
+                Py_DECREF(pairs);
+                return NULL;
+            }
+            PyObject *pair = _PyTuple_FromPair(const_key, const_value);
+            Py_DECREF(const_key);
+            Py_DECREF(const_value);
+            if (pair == NULL) {
+                Py_DECREF(pairs);
+                return NULL;
+            }
+            assert(i < len);
+            PyTuple_SET_ITEM(pairs, i, pair);
+            i++;
+        }
+        /* Use a frozenset of the pairs so that the key does not depend
+         * on the insertion order, matching frozendict equality. */
+        set = PyFrozenSet_New(pairs);
+        Py_DECREF(pairs);
+        if (set == NULL)
+            return NULL;
+
+        key = _PyTuple_FromPair(set, op);
+        Py_DECREF(set);
+        return key;
+    }
     else if (PySlice_Check(op)) {
         PySliceObject *slice = (PySliceObject *)op;
         PyObject *start_key = NULL;

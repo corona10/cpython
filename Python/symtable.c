@@ -2530,6 +2530,13 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Set_kind:
         VISIT_SEQ(st, expr, e->v.Set.elts);
         break;
+    case FrozenDict_kind:
+        VISIT_SEQ_WITH_NULL(st, expr, e->v.FrozenDict.keys);
+        VISIT_SEQ(st, expr, e->v.FrozenDict.values);
+        break;
+    case FrozenSet_kind:
+        VISIT_SEQ(st, expr, e->v.FrozenSet.elts);
+        break;
     case GeneratorExp_kind:
         if (!symtable_visit_genexp(st, e))
             return 0;

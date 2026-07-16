@@ -803,6 +803,29 @@ class Unparser(NodeVisitor):
                 lambda: self.write(", "), write_item, zip(node.keys, node.values)
             )
 
+    def visit_FrozenSet(self, node):
+        with self.delimit("f{", "}"):
+            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+
+    def visit_FrozenDict(self, node):
+        def write_item(item):
+            k, v = item
+            if k is None:
+                # for dictionary unpacking operator in dicts f{**{'y': 2}}
+                # see PEP 448 for details
+                self.write("**")
+                self.set_precedence(_Precedence.EXPR, v)
+                self.traverse(v)
+            else:
+                self.traverse(k)
+                self.write(": ")
+                self.traverse(v)
+
+        with self.delimit("f{", "}"):
+            self.interleave(
+                lambda: self.write(", "), write_item, zip(node.keys, node.values)
+            )
+
     def visit_Tuple(self, node):
         with self.delimit_if(
             "(",

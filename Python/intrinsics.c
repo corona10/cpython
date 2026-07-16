@@ -216,6 +216,13 @@ make_frozenset(PyThreadState* Py_UNUSED(ignored), PyObject *set)
     return _PySet_Freeze(set);
 }
 
+static PyObject *
+make_frozendict(PyThreadState* Py_UNUSED(ignored), PyObject *dict)
+{
+    assert(PyDict_CheckExact(dict));
+    return PyFrozenDict_New(dict);
+}
+
 
 #define INTRINSIC_FUNC_ENTRY(N, F) \
     [N] = {F, #N},
@@ -235,6 +242,7 @@ _PyIntrinsics_UnaryFunctions[] = {
     INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
     INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENSET, make_frozenset)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_BUILD_FROZENDICT, make_frozendict)
 };
 
 

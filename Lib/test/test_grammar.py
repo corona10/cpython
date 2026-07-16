@@ -1700,6 +1700,19 @@ class GrammarTests(unittest.TestCase):
         x = 'x'
         x = 123
 
+    def test_frozen_displays(self):
+        ### atom: ... | FBRACE [dictsetmaker] '}'
+        self.assertEqual(f{1, 2, 3}, frozenset({1, 2, 3}))
+        self.assertEqual(f{'one': 1, 'two': 2}, frozendict({'one': 1, 'two': 2}))
+        self.assertEqual(f{}, frozendict())
+        a, d = [2, 3], {'one': 1}
+        self.assertEqual(f{1, *a}, frozenset({1, 2, 3}))
+        self.assertEqual(f{**d, 'two': 2}, frozendict({'one': 1, 'two': 2}))
+        check_syntax_error(self, "f {1, 2}")         # no space before '{'
+        check_syntax_error(self, "rf{1}")            # only a bare f/F prefix
+        check_syntax_error(self, "f{x for x in a}")  # no comprehensions
+        check_syntax_error(self, "f{1, 2} = x")
+
     ### exprlist: expr (',' expr)* [',']
     ### testlist: test (',' test)* [',']
     # These have been exercised enough above

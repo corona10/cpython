@@ -425,6 +425,25 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
                 break;
             }
             c = tok_nextc(tok);
+            if (c == '{' && saw_f && !(saw_b || saw_r || saw_u || saw_t)) {
+                /* Frozen display literal: 'f{' introduces a frozenset or
+                   frozendict display.  The opening brace is part of the
+                   token, so track the nesting level here just like the
+                   '{' case below does. */
+                if (tok->level >= MAXLEVEL) {
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested parentheses"));
+                }
+                tok->parenstack[tok->level] = '{';
+                tok->parenlinenostack[tok->level] = tok->lineno;
+                tok->parencolstack[tok->level] = (int)(tok->start - tok->line_start);
+                tok->level++;
+                if (INSIDE_FSTRING(tok)) {
+                    current_tok->curly_bracket_depth++;
+                }
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(FBRACE);
+            }
             if (c == '"' || c == '\'') {
                 // Raise error on incompatible string prefixes:
                 int status = _PyLexer_check_string_prefixes(

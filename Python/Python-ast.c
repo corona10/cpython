@@ -77,6 +77,8 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->FloorDiv_type);
     Py_CLEAR(state->For_type);
     Py_CLEAR(state->FormattedValue_type);
+    Py_CLEAR(state->FrozenDict_type);
+    Py_CLEAR(state->FrozenSet_type);
     Py_CLEAR(state->FunctionDef_type);
     Py_CLEAR(state->FunctionType_type);
     Py_CLEAR(state->GeneratorExp_type);
@@ -585,6 +587,13 @@ static const char * const Dict_fields[]={
     "values",
 };
 static const char * const Set_fields[]={
+    "elts",
+};
+static const char * const FrozenDict_fields[]={
+    "keys",
+    "values",
+};
+static const char * const FrozenSet_fields[]={
     "elts",
 };
 static const char * const ListComp_fields[]={
@@ -2804,6 +2813,82 @@ add_ast_annotations(struct ast_state *state)
         return 0;
     }
     Py_DECREF(Set_annotations);
+    PyObject *FrozenDict_annotations = PyDict_New();
+    if (!FrozenDict_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FrozenDict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FrozenDict_annotations, "keys", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FrozenDict_annotations);
+            return 0;
+        }
+    }
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FrozenDict_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FrozenDict_annotations, "values", type) ==
+                                    0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FrozenDict_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FrozenDict_type, "_field_types",
+                                  FrozenDict_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenDict_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FrozenDict_type, "__annotations__",
+                                  FrozenDict_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenDict_annotations);
+        return 0;
+    }
+    Py_DECREF(FrozenDict_annotations);
+    PyObject *FrozenSet_annotations = PyDict_New();
+    if (!FrozenSet_annotations) return 0;
+    {
+        PyObject *type = state->expr_type;
+        type = Py_GenericAlias((PyObject *)&PyList_Type, type);
+        cond = type != NULL;
+        if (!cond) {
+            Py_DECREF(FrozenSet_annotations);
+            return 0;
+        }
+        cond = PyDict_SetItemString(FrozenSet_annotations, "elts", type) == 0;
+        Py_DECREF(type);
+        if (!cond) {
+            Py_DECREF(FrozenSet_annotations);
+            return 0;
+        }
+    }
+    cond = PyObject_SetAttrString(state->FrozenSet_type, "_field_types",
+                                  FrozenSet_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenSet_annotations);
+        return 0;
+    }
+    cond = PyObject_SetAttrString(state->FrozenSet_type, "__annotations__",
+                                  FrozenSet_annotations) == 0;
+    if (!cond) {
+        Py_DECREF(FrozenSet_annotations);
+        return 0;
+    }
+    Py_DECREF(FrozenSet_annotations);
     PyObject *ListComp_annotations = PyDict_New();
     if (!ListComp_annotations) return 0;
     {
@@ -6350,6 +6435,8 @@ init_types(void *arg)
         "     | IfExp(expr test, expr body, expr orelse)\n"
         "     | Dict(expr?* keys, expr* values)\n"
         "     | Set(expr* elts)\n"
+        "     | FrozenDict(expr?* keys, expr* values)\n"
+        "     | FrozenSet(expr* elts)\n"
         "     | ListComp(expr elt, comprehension* generators)\n"
         "     | SetComp(expr elt, comprehension* generators)\n"
         "     | DictComp(expr key, expr? value, comprehension* generators)\n"
@@ -6411,6 +6498,14 @@ init_types(void *arg)
     state->Set_type = make_type(state, "Set", state->expr_type, Set_fields, 1,
         "Set(expr* elts)");
     if (!state->Set_type) return -1;
+    state->FrozenDict_type = make_type(state, "FrozenDict", state->expr_type,
+                                       FrozenDict_fields, 2,
+        "FrozenDict(expr?* keys, expr* values)");
+    if (!state->FrozenDict_type) return -1;
+    state->FrozenSet_type = make_type(state, "FrozenSet", state->expr_type,
+                                      FrozenSet_fields, 1,
+        "FrozenSet(expr* elts)");
+    if (!state->FrozenSet_type) return -1;
     state->ListComp_type = make_type(state, "ListComp", state->expr_type,
                                      ListComp_fields, 2,
         "ListComp(expr elt, comprehension* generators)");
@@ -7927,6 +8022,42 @@ _PyAST_Set(asdl_expr_seq * elts, int lineno, int col_offset, int end_lineno,
         return NULL;
     p->kind = Set_kind;
     p->v.Set.elts = elts;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+_PyAST_FrozenDict(asdl_expr_seq * keys, asdl_expr_seq * values, int lineno, int
+                  col_offset, int end_lineno, int end_col_offset, PyArena
+                  *arena)
+{
+    expr_ty p;
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = FrozenDict_kind;
+    p->v.FrozenDict.keys = keys;
+    p->v.FrozenDict.values = values;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+_PyAST_FrozenSet(asdl_expr_seq * elts, int lineno, int col_offset, int
+                 end_lineno, int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    p = (expr_ty)_PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = FrozenSet_kind;
+    p->v.FrozenSet.elts = elts;
     p->lineno = lineno;
     p->col_offset = col_offset;
     p->end_lineno = end_lineno;
@@ -9689,6 +9820,34 @@ ast2obj_expr(struct ast_state *state, void* _o)
         result = PyType_GenericNew(tp, NULL, NULL);
         if (!result) goto failed;
         value = ast2obj_list(state, (asdl_seq*)o->v.Set.elts, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->elts, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case FrozenDict_kind:
+        tp = (PyTypeObject *)state->FrozenDict_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(state, (asdl_seq*)o->v.FrozenDict.keys,
+                             ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->keys, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_list(state, (asdl_seq*)o->v.FrozenDict.values,
+                             ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, state->values, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case FrozenSet_kind:
+        tp = (PyTypeObject *)state->FrozenSet_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(state, (asdl_seq*)o->v.FrozenSet.elts,
+                             ast2obj_expr);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->elts, value) == -1)
             goto failed;
@@ -14420,6 +14579,147 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, const char*
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = state->FrozenDict_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        asdl_expr_seq* keys;
+        asdl_expr_seq* values;
+
+        if (PyObject_GetOptionalAttr(obj, state->keys, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
+        }
+        {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "FrozenDict field \"keys\" must be a list, not a %T", tmp);
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            keys = _Py_asdl_expr_seq_new(len, arena);
+            if (keys == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
+                if (_Py_EnterRecursiveCall(" while traversing 'FrozenDict' node")) {
+                    goto failed;
+                }
+                res = obj2ast_expr(state, tmp2, &val, "keys", arena);
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "FrozenDict field \"keys\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(keys, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        if (PyObject_GetOptionalAttr(obj, state->values, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
+        }
+        {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "FrozenDict field \"values\" must be a list, not a %T", tmp);
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            values = _Py_asdl_expr_seq_new(len, arena);
+            if (values == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
+                if (_Py_EnterRecursiveCall(" while traversing 'FrozenDict' node")) {
+                    goto failed;
+                }
+                res = obj2ast_expr(state, tmp2, &val, "values", arena);
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "FrozenDict field \"values\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(values, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_FrozenDict(keys, values, lineno, col_offset, end_lineno,
+                                 end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+    tp = state->FrozenSet_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (isinstance) {
+        asdl_expr_seq* elts;
+
+        if (PyObject_GetOptionalAttr(obj, state->elts, &tmp) < 0) {
+            return -1;
+        }
+        if (tmp == NULL) {
+            tmp = PyList_New(0);
+            if (tmp == NULL) {
+                return -1;
+            }
+        }
+        {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "FrozenSet field \"elts\" must be a list, not a %T", tmp);
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            elts = _Py_asdl_expr_seq_new(len, arena);
+            if (elts == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                PyObject *tmp2 = Py_NewRef(PyList_GET_ITEM(tmp, i));
+                if (_Py_EnterRecursiveCall(" while traversing 'FrozenSet' node")) {
+                    goto failed;
+                }
+                res = obj2ast_expr(state, tmp2, &val, "elts", arena);
+                _Py_LeaveRecursiveCall();
+                Py_DECREF(tmp2);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "FrozenSet field \"elts\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(elts, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = _PyAST_FrozenSet(elts, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = state->ListComp_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -18252,6 +18552,12 @@ astmodule_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddObjectRef(m, "Set", state->Set_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "FrozenDict", state->FrozenDict_type) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(m, "FrozenSet", state->FrozenSet_type) < 0) {
         return -1;
     }
     if (PyModule_AddObjectRef(m, "ListComp", state->ListComp_type) < 0) {

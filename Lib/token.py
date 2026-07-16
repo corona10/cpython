@@ -69,12 +69,13 @@ FSTRING_END = 61
 TSTRING_START = 62
 TSTRING_MIDDLE = 63
 TSTRING_END = 64
-COMMENT = 65
-NL = 66
+FBRACE = 65
+COMMENT = 66
+NL = 67
 # These aren't used by the C tokenizer but are needed for tokenize.py
-ERRORTOKEN = 67
-ENCODING = 68
-N_TOKENS = 69
+ERRORTOKEN = 68
+ENCODING = 69
+N_TOKENS = 70
 # Special definitions for cooperation with parser
 NT_OFFSET = 256
 

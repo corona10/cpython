@@ -903,6 +903,7 @@ atom[expr_ty]:
     | &'(' (genexp | tuple | group)
     | &'[' (listcomp | list)
     | &'{' (dictcomp | setcomp | dict | set)
+    | &FBRACE (fdict | fset)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 group[expr_ty]:
@@ -1024,6 +1025,8 @@ tuple[expr_ty]:
 
 set[expr_ty]: '{' a=star_named_expressions_sequence '}' { _PyAST_Set(a, EXTRA) }
 
+fset[expr_ty]: FBRACE a=star_named_expressions_sequence '}' { _PyAST_FrozenSet(a, EXTRA) }
+
 # Dicts
 # -----
 
@@ -1034,6 +1037,14 @@ dict[expr_ty]:
             CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
             EXTRA) }
     | '{' invalid_double_starred_kvpairs '}'
+
+fdict[expr_ty]:
+    | FBRACE a=[double_starred_kvpairs] '}' {
+        _PyAST_FrozenDict(
+            CHECK(asdl_expr_seq*, _PyPegen_get_keys(p, a)),
+            CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
+            EXTRA) }
+    | FBRACE invalid_double_starred_kvpairs '}'
 
 double_starred_kvpairs[asdl_seq*]: a=','.double_starred_kvpair+ [','] { a }
 

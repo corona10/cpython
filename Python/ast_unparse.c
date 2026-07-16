@@ -365,6 +365,47 @@ append_ast_set(PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_frozendict(PyUnicodeWriter *writer, expr_ty e)
+{
+    Py_ssize_t i, value_count;
+    expr_ty key_node;
+
+    APPEND_STR("f{");
+    value_count = asdl_seq_LEN(e->v.FrozenDict.values);
+
+    for (i = 0; i < value_count; i++) {
+        APPEND_STR_IF(i > 0, ", ");
+        key_node = (expr_ty)asdl_seq_GET(e->v.FrozenDict.keys, i);
+        if (key_node != NULL) {
+            APPEND_EXPR(key_node, PR_TEST);
+            APPEND_STR(": ");
+            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.FrozenDict.values, i), PR_TEST);
+        }
+        else {
+            APPEND_STR("**");
+            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.FrozenDict.values, i), PR_EXPR);
+        }
+    }
+
+    APPEND_CHAR_FINISH('}');
+}
+
+static int
+append_ast_frozenset(PyUnicodeWriter *writer, expr_ty e)
+{
+    Py_ssize_t i, elem_count;
+
+    APPEND_STR("f{");
+    elem_count = asdl_seq_LEN(e->v.FrozenSet.elts);
+    for (i = 0; i < elem_count; i++) {
+        APPEND_STR_IF(i > 0, ", ");
+        APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.FrozenSet.elts, i), PR_TEST);
+    }
+
+    APPEND_CHAR_FINISH('}');
+}
+
+static int
 append_ast_list(PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
@@ -954,6 +995,10 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_dict(writer, e);
     case Set_kind:
         return append_ast_set(writer, e);
+    case FrozenDict_kind:
+        return append_ast_frozendict(writer, e);
+    case FrozenSet_kind:
+        return append_ast_frozenset(writer, e);
     case GeneratorExp_kind:
         return append_ast_genexp(writer, e);
     case ListComp_kind:

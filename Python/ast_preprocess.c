@@ -547,6 +547,13 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
         break;
+    case FrozenDict_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenDict.keys);
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenDict.values);
+        break;
+    case FrozenSet_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.FrozenSet.elts);
+        break;
     case ListComp_kind:
         CALL(astfold_expr, expr_ty, node_->v.ListComp.elt);
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.ListComp.generators);

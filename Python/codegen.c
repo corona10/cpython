@@ -3595,17 +3595,46 @@ codegen_set(compiler *c, expr_ty e)
 }
 
 static int
-codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
+codegen_frozenset(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    asdl_expr_seq *elts = e->v.FrozenSet.elts;
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    int seen_star = 0;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == Starred_kind) {
+            seen_star = 1;
+            break;
+        }
+    }
+    if (!seen_star && n <= _PY_STACK_USE_GUIDELINE) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(elts, i));
+        }
+        ADDOP_I(c, loc, BUILD_FROZENSET, n);
+        return SUCCESS;
+    }
+    /* Fall back to building a set and freezing it in place. */
+    RETURN_IF_ERROR(starunpack_helper(c, loc, elts, 0,
+                                      BUILD_SET, SET_ADD, SET_UPDATE, 0));
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+    return SUCCESS;
+}
+
+static int
+codegen_subdict(compiler *c, location loc,
+                asdl_expr_seq *keys, asdl_expr_seq *values,
+                Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
     int big = n*2 > _PY_STACK_USE_GUIDELINE;
-    location loc = LOC(e);
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
     for (i = begin; i < end; i++) {
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(keys, i));
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(values, i));
         if (big) {
             ADDOP_I(c, loc, MAP_ADD, 1);
         }
@@ -3617,20 +3646,21 @@ codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 }
 
 static int
-codegen_dict(compiler *c, expr_ty e)
+codegen_dict_impl(compiler *c, location loc,
+                  asdl_expr_seq *keys, asdl_expr_seq *values)
 {
-    location loc = LOC(e);
     Py_ssize_t i, n, elements;
     int have_dict;
     int is_unpacking = 0;
-    n = asdl_seq_LEN(e->v.Dict.values);
+    n = asdl_seq_LEN(values);
     have_dict = 0;
     elements = 0;
     for (i = 0; i < n; i++) {
-        is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
+        is_unpacking = (expr_ty)asdl_seq_GET(keys, i) == NULL;
         if (is_unpacking) {
             if (elements) {
-                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i));
+                RETURN_IF_ERROR(codegen_subdict(c, loc, keys, values,
+                                                i - elements, i));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -3641,12 +3671,13 @@ codegen_dict(compiler *c, expr_ty e)
                 ADDOP_I(c, loc, BUILD_MAP, 0);
                 have_dict = 1;
             }
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(values, i));
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
             if (elements*2 > _PY_STACK_USE_GUIDELINE) {
-                RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
+                RETURN_IF_ERROR(codegen_subdict(c, loc, keys, values,
+                                                i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
                 }
@@ -3659,7 +3690,8 @@ codegen_dict(compiler *c, expr_ty e)
         }
     }
     if (elements) {
-        RETURN_IF_ERROR(codegen_subdict(c, e, n - elements, n));
+        RETURN_IF_ERROR(codegen_subdict(c, loc, keys, values,
+                                        n - elements, n));
         if (have_dict) {
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
@@ -3668,6 +3700,40 @@ codegen_dict(compiler *c, expr_ty e)
     if (!have_dict) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
     }
+    return SUCCESS;
+}
+
+static int
+codegen_dict(compiler *c, expr_ty e)
+{
+    return codegen_dict_impl(c, LOC(e), e->v.Dict.keys, e->v.Dict.values);
+}
+
+static int
+codegen_frozendict(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    asdl_expr_seq *keys = e->v.FrozenDict.keys;
+    asdl_expr_seq *values = e->v.FrozenDict.values;
+    Py_ssize_t n = asdl_seq_LEN(values);
+    int is_unpacking = 0;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        if (asdl_seq_GET(keys, i) == NULL) {
+            is_unpacking = 1;
+            break;
+        }
+    }
+    if (!is_unpacking && n*2 <= _PY_STACK_USE_GUIDELINE) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(keys, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(values, i));
+        }
+        ADDOP_I(c, loc, BUILD_FROZENMAP, n);
+        return SUCCESS;
+    }
+    /* Fall back to building a dict and wrapping it. */
+    RETURN_IF_ERROR(codegen_dict_impl(c, loc, keys, values));
+    ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENDICT);
     return SUCCESS;
 }
 
@@ -3727,6 +3793,10 @@ infer_type(expr_ty e)
     case Set_kind:
     case SetComp_kind:
         return &PySet_Type;
+    case FrozenSet_kind:
+        return &PyFrozenSet_Type;
+    case FrozenDict_kind:
+        return &PyFrozenDict_Type;
     case GeneratorExp_kind:
         return &PyGen_Type;
     case Lambda_kind:
@@ -3756,6 +3826,8 @@ check_caller(compiler *c, expr_ty e)
     case DictComp_kind:
     case Set_kind:
     case SetComp_kind:
+    case FrozenDict_kind:
+    case FrozenSet_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
     case TemplateStr_kind:
@@ -3788,6 +3860,7 @@ check_subscripter(compiler *c, expr_ty e)
         _Py_FALLTHROUGH;
     case Set_kind:
     case SetComp_kind:
+    case FrozenSet_kind:
     case GeneratorExp_kind:
     case TemplateStr_kind:
     case Interpolation_kind:
@@ -5506,6 +5579,10 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
         return codegen_dict(c, e);
     case Set_kind:
         return codegen_set(c, e);
+    case FrozenDict_kind:
+        return codegen_frozendict(c, e);
+    case FrozenSet_kind:
+        return codegen_frozenset(c, e);
     case GeneratorExp_kind:
         return codegen_genexp(c, e);
     case ListComp_kind:

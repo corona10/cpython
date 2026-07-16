@@ -1568,6 +1568,145 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts,
     return instr_make_load_const(instr, const_tuple, consts, const_cache, consts_index);
 }
 
+/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_FROZENSET n
+   with    LOAD_CONST frozenset({c1, c2, ... cn}).
+   Unlike lists and sets, a frozenset is immutable, so the fold is always
+   valid, no matter how the value is used afterwards.
+   The consts table must still be in list form so that the
+   new constant can be appended.
+   Called with codestr pointing to the BUILD_FROZENSET.
+*/
+static int
+fold_frozenset_of_constants(basicblock *bb, int i, PyObject *consts,
+                            PyObject *const_cache,
+                            _Py_hashtable_t *consts_index)
+{
+    /* Pre-conditions */
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == BUILD_FROZENSET);
+
+    int seq_size = instr->i_oparg;
+    if (seq_size > _PY_STACK_USE_GUIDELINE) {
+        return SUCCESS;
+    }
+
+    cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {
+        /* not a const sequence */
+        return SUCCESS;
+    }
+
+    PyObject *const_tuple = PyTuple_New((Py_ssize_t)seq_size);
+    if (const_tuple == NULL) {
+        return ERROR;
+    }
+
+    for (int j = 0; j < seq_size; j++) {
+        cfg_instr *inst = const_instrs[j];
+        assert(loads_const(inst->i_opcode));
+        PyObject *element = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+        if (element == NULL) {
+            Py_DECREF(const_tuple);
+            return ERROR;
+        }
+        PyTuple_SET_ITEM(const_tuple, j, element);
+    }
+
+    PyObject *const_frozenset = PyFrozenSet_New(const_tuple);
+    Py_DECREF(const_tuple);
+    if (const_frozenset == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            /* An unhashable constant: leave the error to the runtime. */
+            PyErr_Clear();
+            return SUCCESS;
+        }
+        return ERROR;
+    }
+
+    nop_out(const_instrs, seq_size);
+    return instr_make_load_const(instr, const_frozenset, consts,
+                                 const_cache, consts_index);
+}
+
+/* Replace LOAD_CONST k1, LOAD_CONST v1, ... LOAD_CONST kn, LOAD_CONST vn,
+   BUILD_FROZENMAP n
+   with    LOAD_CONST frozendict({k1: v1, ... kn: vn}).
+   The consts table must still be in list form so that the
+   new constant can be appended.
+   Called with codestr pointing to the BUILD_FROZENMAP.
+*/
+static int
+fold_frozendict_of_constants(basicblock *bb, int i, PyObject *consts,
+                             PyObject *const_cache,
+                             _Py_hashtable_t *consts_index)
+{
+    /* Pre-conditions */
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == BUILD_FROZENMAP);
+
+    int nitems = instr->i_oparg;
+    if (nitems*2 > _PY_STACK_USE_GUIDELINE) {
+        return SUCCESS;
+    }
+
+    cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, nitems*2)) {
+        /* not a const sequence */
+        return SUCCESS;
+    }
+
+    PyObject *const_dict = PyDict_New();
+    if (const_dict == NULL) {
+        return ERROR;
+    }
+
+    for (int j = 0; j < nitems; j++) {
+        assert(loads_const(const_instrs[2*j]->i_opcode));
+        assert(loads_const(const_instrs[2*j+1]->i_opcode));
+        PyObject *dict_key = get_const_value(const_instrs[2*j]->i_opcode,
+                                             const_instrs[2*j]->i_oparg, consts);
+        if (dict_key == NULL) {
+            Py_DECREF(const_dict);
+            return ERROR;
+        }
+        PyObject *dict_value = get_const_value(const_instrs[2*j+1]->i_opcode,
+                                               const_instrs[2*j+1]->i_oparg, consts);
+        if (dict_value == NULL) {
+            Py_DECREF(dict_key);
+            Py_DECREF(const_dict);
+            return ERROR;
+        }
+        int err = PyDict_SetItem(const_dict, dict_key, dict_value);
+        Py_DECREF(dict_key);
+        Py_DECREF(dict_value);
+        if (err < 0) {
+            Py_DECREF(const_dict);
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                /* An unhashable constant: leave the error to the runtime. */
+                PyErr_Clear();
+                return SUCCESS;
+            }
+            return ERROR;
+        }
+    }
+
+    PyObject *const_frozendict = PyFrozenDict_New(const_dict);
+    Py_DECREF(const_dict);
+    if (const_frozendict == NULL) {
+        return ERROR;
+    }
+
+    nop_out(const_instrs, nitems*2);
+    return instr_make_load_const(instr, const_frozendict, consts,
+                                 const_cache, consts_index);
+}
+
 /* Replace:
     BUILD_LIST 0
     LOAD_CONST c1
@@ -2441,6 +2580,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts,
             case BUILD_LIST:
             case BUILD_SET:
                 RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache, consts_index));
+                break;
+            case BUILD_FROZENSET:
+                RETURN_IF_ERROR(fold_frozenset_of_constants(bb, i, consts, const_cache, consts_index));
+                break;
+            case BUILD_FROZENMAP:
+                RETURN_IF_ERROR(fold_frozendict_of_constants(bb, i, consts, const_cache, consts_index));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:

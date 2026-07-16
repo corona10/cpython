@@ -243,6 +243,26 @@ class TestTranforms(BytecodeTestCase):
         self.assertTrue(g(4))
         self.check_lnotab(g)
 
+    def test_constant_folding_frozenset_displays(self):
+        code = compile('f{1, 2, 3}', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', frozenset({1, 2, 3}))
+        self.assertNotInBytecode(code, 'BUILD_FROZENSET')
+        self.check_lnotab(code)
+        # Not folded with non-constant elements:
+        code = compile('f{a, 1}', '', 'single')
+        self.assertInBytecode(code, 'BUILD_FROZENSET')
+        self.check_lnotab(code)
+
+    def test_constant_folding_frozenmap_displays(self):
+        code = compile('f{1: 2, 3: 4}', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', frozendict({1: 2, 3: 4}))
+        self.assertNotInBytecode(code, 'BUILD_FROZENMAP')
+        self.check_lnotab(code)
+        # Not folded with non-constant values:
+        code = compile('f{1: a}', '', 'single')
+        self.assertInBytecode(code, 'BUILD_FROZENMAP')
+        self.check_lnotab(code)
+
     def test_constant_folding_small_int(self):
         tests = [
             ('(0, )[0]', 0),

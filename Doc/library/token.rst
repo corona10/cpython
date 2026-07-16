@@ -163,6 +163,14 @@ The token constants are:
 
    .. versionadded:: 3.14
 
+.. data:: FBRACE
+
+   Token value used for the ``f{`` opening delimiter of a frozenset or
+   frozendict display (for example ``f{1, 2}`` or ``f{1: 2}``).  The
+   display is closed by a regular :data:`RBRACE` token.
+
+   .. versionadded:: 3.16
+
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.

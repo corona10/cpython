@@ -294,6 +294,22 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case Set_kind:
         ret = validate_exprs(exp->v.Set.elts, Load, 0);
         break;
+    case FrozenDict_kind:
+        if (asdl_seq_LEN(exp->v.FrozenDict.keys) !=
+                asdl_seq_LEN(exp->v.FrozenDict.values)) {
+            PyErr_SetString(PyExc_ValueError,
+                            "FrozenDict doesn't have the same number of "
+                            "keys as values");
+            return 0;
+        }
+        /* null_ok=1 for keys expressions to allow dict unpacking to work in
+           frozendict literals, i.e. ``f{**{a:b}}`` */
+        ret = validate_exprs(exp->v.FrozenDict.keys, Load, /*null_ok=*/ 1) &&
+            validate_exprs(exp->v.FrozenDict.values, Load, /*null_ok=*/ 0);
+        break;
+    case FrozenSet_kind:
+        ret = validate_exprs(exp->v.FrozenSet.elts, Load, 0);
+        break;
 #define COMP(NAME) \
         case NAME ## _kind: \
             ret = validate_comprehension(exp->v.NAME.generators) && \

@@ -397,6 +397,12 @@ class UnparseTestCase(ASTTestCase):
             ast.parse('{*()}')
         )
 
+    def test_frozen_displays(self):
+        self.check_ast_roundtrip("f{1, 2, 3}")
+        self.check_ast_roundtrip("f{*a, 1}")
+        self.check_ast_roundtrip("f{1: 2, **x}")
+        self.check_ast_roundtrip("f{}")
+
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")
 

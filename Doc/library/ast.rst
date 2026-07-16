@@ -468,6 +468,44 @@ Literals
                     Name(id='d')]))
 
 
+.. class:: FrozenSet(elts)
+
+   A frozenset display, such as ``f{1, 2, 3}``. ``elts`` holds a list of nodes
+   representing the frozenset's elements.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('f{1, 2, 3}', mode='eval'), indent=4))
+        Expression(
+            body=FrozenSet(
+                elts=[
+                    Constant(value=1),
+                    Constant(value=2),
+                    Constant(value=3)]))
+
+   .. versionadded:: 3.16
+
+
+.. class:: FrozenDict(keys, values)
+
+   A frozendict display, such as ``f{1: 2}``. ``keys`` and ``values`` have the
+   same meaning as for :class:`Dict`.
+
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('f{"a":1, **d}', mode='eval'), indent=4))
+        Expression(
+            body=FrozenDict(
+                keys=[
+                    Constant(value='a'),
+                    None],
+                values=[
+                    Constant(value=1),
+                    Name(id='d')]))
+
+   .. versionadded:: 3.16
+
+
 Variables
 ^^^^^^^^^
 
