@@ -402,6 +402,9 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("f{*a, 1}")
         self.check_ast_roundtrip("f{1: 2, **x}")
         self.check_ast_roundtrip("f{}")
+        self.check_ast_roundtrip("f{x for x in a}")
+        self.check_ast_roundtrip("f{x: x * x for x in a}")
+        self.check_ast_roundtrip("f{**x for x in a}")
 
     def test_set_comprehension(self):
         self.check_ast_roundtrip("{x for x in range(5)}")

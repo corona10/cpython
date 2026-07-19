@@ -317,6 +317,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             break;
     COMP(ListComp)
     COMP(SetComp)
+    COMP(FrozenSetComp)
     COMP(GeneratorExp)
 #undef COMP
     case DictComp_kind:
@@ -324,6 +325,13 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_expr(exp->v.DictComp.key, Load);
         if (ret && exp->v.DictComp.value != NULL){
             ret = validate_expr(exp->v.DictComp.value, Load);
+        }
+        break;
+    case FrozenDictComp_kind:
+        ret = validate_comprehension(exp->v.FrozenDictComp.generators) &&
+            validate_expr(exp->v.FrozenDictComp.key, Load);
+        if (ret && exp->v.FrozenDictComp.value != NULL){
+            ret = validate_expr(exp->v.FrozenDictComp.value, Load);
         }
         break;
     case Yield_kind:

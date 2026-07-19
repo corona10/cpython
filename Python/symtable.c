@@ -263,6 +263,8 @@ static int symtable_visit_genexp(struct symtable *st, expr_ty s);
 static int symtable_visit_listcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_setcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_dictcomp(struct symtable *st, expr_ty s);
+static int symtable_visit_frozensetcomp(struct symtable *st, expr_ty s);
+static int symtable_visit_frozendictcomp(struct symtable *st, expr_ty s);
 static int symtable_visit_arguments(struct symtable *st, arguments_ty);
 static int symtable_visit_excepthandler(struct symtable *st, excepthandler_ty);
 static int symtable_visit_alias(struct symtable *st, alias_ty);
@@ -2549,6 +2551,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (!symtable_visit_setcomp(st, e))
             return 0;
         break;
+    case FrozenSetComp_kind:
+        if (!symtable_visit_frozensetcomp(st, e))
+            return 0;
+        break;
+    case FrozenDictComp_kind:
+        if (!symtable_visit_frozendictcomp(st, e))
+            return 0;
+        break;
     case DictComp_kind:
         if (!symtable_visit_dictcomp(st, e))
             return 0;
@@ -3110,9 +3120,11 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
             st->st_cur->ste_comprehension = ListComprehension;
             break;
         case SetComp_kind:
+        case FrozenSetComp_kind:
             st->st_cur->ste_comprehension = SetComprehension;
             break;
         case DictComp_kind:
+        case FrozenDictComp_kind:
             st->st_cur->ste_comprehension = DictComprehension;
             break;
         default:
@@ -3190,6 +3202,23 @@ symtable_visit_dictcomp(struct symtable *st, expr_ty e)
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
+}
+
+static int
+symtable_visit_frozensetcomp(struct symtable *st, expr_ty e)
+{
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_setcomp),
+                                         e->v.FrozenSetComp.generators,
+                                         e->v.FrozenSetComp.elt, NULL);
+}
+
+static int
+symtable_visit_frozendictcomp(struct symtable *st, expr_ty e)
+{
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_dictcomp),
+                                         e->v.FrozenDictComp.generators,
+                                         e->v.FrozenDictComp.key,
+                                         e->v.FrozenDictComp.value);
 }
 
 static int

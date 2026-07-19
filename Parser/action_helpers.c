@@ -1125,6 +1125,10 @@ _PyPegen_get_expr_name(expr_ty e)
             return "frozendict literal";
         case FrozenSet_kind:
             return "frozenset display";
+        case FrozenSetComp_kind:
+            return "frozenset comprehension";
+        case FrozenDictComp_kind:
+            return "frozendict comprehension";
         case JoinedStr_kind:
         case FormattedValue_kind:
             return "f-string expression";

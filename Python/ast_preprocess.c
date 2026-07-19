@@ -569,6 +569,17 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTPreprocessState *state)
         }
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.DictComp.generators);
         break;
+    case FrozenSetComp_kind:
+        CALL(astfold_expr, expr_ty, node_->v.FrozenSetComp.elt);
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.FrozenSetComp.generators);
+        break;
+    case FrozenDictComp_kind:
+        CALL(astfold_expr, expr_ty, node_->v.FrozenDictComp.key);
+        if (node_->v.FrozenDictComp.value != NULL){
+            CALL(astfold_expr, expr_ty, node_->v.FrozenDictComp.value);
+        }
+        CALL_SEQ(astfold_comprehension, comprehension, node_->v.FrozenDictComp.generators);
+        break;
     case GeneratorExp_kind:
         CALL(astfold_expr, expr_ty, node_->v.GeneratorExp.elt);
         CALL_SEQ(astfold_comprehension, comprehension, node_->v.GeneratorExp.generators);

@@ -1710,8 +1710,14 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(f{**d, 'two': 2}, frozendict({'one': 1, 'two': 2}))
         check_syntax_error(self, "f {1, 2}")         # no space before '{'
         check_syntax_error(self, "rf{1}")            # only a bare f/F prefix
-        check_syntax_error(self, "f{x for x in a}")  # no comprehensions
         check_syntax_error(self, "f{1, 2} = x")
+
+    def test_frozen_comprehensions(self):
+        nums = [1, 2, 2, 3]
+        self.assertEqual(f{i for i in nums}, frozenset({1, 2, 3}))
+        self.assertEqual(f{i: i + 1 for i in nums},
+                         frozendict({1: 2, 2: 3, 3: 4}))
+        self.assertEqual(f{**{i: i} for i in nums}, frozendict({i: i for i in nums}))
 
     ### exprlist: expr (',' expr)* [',']
     ### testlist: test (',' test)* [',']

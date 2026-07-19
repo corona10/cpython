@@ -748,6 +748,24 @@ class Unparser(NodeVisitor):
             for gen in node.generators:
                 self.traverse(gen)
 
+    def visit_FrozenSetComp(self, node):
+        with self.delimit("f{", "}"):
+            self.traverse(node.elt)
+            for gen in node.generators:
+                self.traverse(gen)
+
+    def visit_FrozenDictComp(self, node):
+        with self.delimit("f{", "}"):
+            if node.value:
+                self.traverse(node.key)
+                self.write(": ")
+                self.traverse(node.value)
+            else:
+                self.write("**")
+                self.traverse(node.key)
+            for gen in node.generators:
+                self.traverse(gen)
+
     def visit_comprehension(self, node):
         if node.is_async:
             self.write(" async for ")

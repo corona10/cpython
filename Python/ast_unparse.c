@@ -519,6 +519,32 @@ append_ast_dictcomp(PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_frozensetcomp(PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_STR("f{");
+    APPEND_EXPR(e->v.FrozenSetComp.elt, PR_TEST);
+    APPEND(comprehensions, e->v.FrozenSetComp.generators);
+    APPEND_CHAR_FINISH('}');
+}
+
+static int
+append_ast_frozendictcomp(PyUnicodeWriter *writer, expr_ty e)
+{
+    APPEND_STR("f{");
+    if (e->v.FrozenDictComp.value) {
+        APPEND_EXPR(e->v.FrozenDictComp.key, PR_TEST);
+        APPEND_STR(": ");
+        APPEND_EXPR(e->v.FrozenDictComp.value, PR_TEST);
+    }
+    else {
+        APPEND_STR("**");
+        APPEND_EXPR(e->v.FrozenDictComp.key, PR_TEST);
+    }
+    APPEND(comprehensions, e->v.FrozenDictComp.generators);
+    APPEND_CHAR_FINISH('}');
+}
+
+static int
 append_ast_compare(PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
@@ -1007,6 +1033,10 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_setcomp(writer, e);
     case DictComp_kind:
         return append_ast_dictcomp(writer, e);
+    case FrozenSetComp_kind:
+        return append_ast_frozensetcomp(writer, e);
+    case FrozenDictComp_kind:
+        return append_ast_frozendictcomp(writer, e);
     case Yield_kind:
         return append_ast_yield(writer, e);
     case YieldFrom_kind:

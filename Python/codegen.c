@@ -3794,8 +3794,10 @@ infer_type(expr_ty e)
     case SetComp_kind:
         return &PySet_Type;
     case FrozenSet_kind:
+    case FrozenSetComp_kind:
         return &PyFrozenSet_Type;
     case FrozenDict_kind:
+    case FrozenDictComp_kind:
         return &PyFrozenDict_Type;
     case GeneratorExp_kind:
         return &PyGen_Type;
@@ -3828,6 +3830,8 @@ check_caller(compiler *c, expr_ty e)
     case SetComp_kind:
     case FrozenDict_kind:
     case FrozenSet_kind:
+    case FrozenSetComp_kind:
+    case FrozenDictComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
     case TemplateStr_kind:
@@ -3861,6 +3865,7 @@ check_subscripter(compiler *c, expr_ty e)
     case Set_kind:
     case SetComp_kind:
     case FrozenSet_kind:
+    case FrozenSetComp_kind:
     case GeneratorExp_kind:
     case TemplateStr_kind:
     case Interpolation_kind:
@@ -5296,6 +5301,36 @@ codegen_dictcomp(compiler *c, expr_ty e)
 
 
 static int
+codegen_frozensetcomp(compiler *c, expr_ty e)
+{
+    assert(e->kind == FrozenSetComp_kind);
+    _Py_DECLARE_STR(anon_setcomp, "<setcomp>");
+    RETURN_IF_ERROR(
+        codegen_comprehension(c, e, COMP_SETCOMP, &_Py_STR(anon_setcomp),
+                              e->v.FrozenSetComp.generators,
+                              e->v.FrozenSetComp.elt, NULL,
+                              /*avoid_creation=*/false));
+    ADDOP_I(c, LOC(e), CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENSET);
+    return SUCCESS;
+}
+
+
+static int
+codegen_frozendictcomp(compiler *c, expr_ty e)
+{
+    assert(e->kind == FrozenDictComp_kind);
+    _Py_DECLARE_STR(anon_dictcomp, "<dictcomp>");
+    RETURN_IF_ERROR(
+        codegen_comprehension(c, e, COMP_DICTCOMP, &_Py_STR(anon_dictcomp),
+                              e->v.FrozenDictComp.generators,
+                              e->v.FrozenDictComp.key, e->v.FrozenDictComp.value,
+                              /*avoid_creation=*/false));
+    ADDOP_I(c, LOC(e), CALL_INTRINSIC_1, INTRINSIC_BUILD_FROZENDICT);
+    return SUCCESS;
+}
+
+
+static int
 codegen_visit_keyword(compiler *c, keyword_ty k)
 {
     VISIT(c, expr, k->value);
@@ -5591,6 +5626,10 @@ codegen_visit_expr_impl(compiler *c, expr_ty e, bool result_is_unused)
         return codegen_setcomp(c, e);
     case DictComp_kind:
         return codegen_dictcomp(c, e);
+    case FrozenSetComp_kind:
+        return codegen_frozensetcomp(c, e);
+    case FrozenDictComp_kind:
+        return codegen_frozendictcomp(c, e);
     case Yield_kind:
         if (!_PyST_IsFunctionLike(SYMTABLE_ENTRY(c))) {
             return _PyCompile_Error(c, loc, "'yield' outside function");
