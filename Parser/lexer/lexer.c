@@ -442,7 +442,7 @@ _PyLexer_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, str
                 }
                 p_start = tok->start;
                 p_end = tok->cur;
-                return MAKE_TOKEN(FBRACE);
+                return MAKE_TOKEN(FLBRACE);
             }
             if (c == '"' || c == '\'') {
                 // Raise error on incompatible string prefixes:

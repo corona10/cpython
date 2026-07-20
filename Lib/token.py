@@ -69,7 +69,7 @@ FSTRING_END = 61
 TSTRING_START = 62
 TSTRING_MIDDLE = 63
 TSTRING_END = 64
-FBRACE = 65
+FLBRACE = 65
 COMMENT = 66
 NL = 67
 # These aren't used by the C tokenizer but are needed for tokenize.py

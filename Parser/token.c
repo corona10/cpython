@@ -71,7 +71,7 @@ const char * const _PyParser_TokenNames[] = {
     "TSTRING_START",
     "TSTRING_MIDDLE",
     "TSTRING_END",
-    "FBRACE",
+    "FLBRACE",
     "COMMENT",
     "NL",
     "<ERRORTOKEN>",

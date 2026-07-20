@@ -1701,7 +1701,7 @@ class GrammarTests(unittest.TestCase):
         x = 123
 
     def test_frozen_displays(self):
-        ### atom: ... | FBRACE [dictsetmaker] '}'
+        ### atom: ... | FLBRACE [dictsetmaker] '}'
         self.assertEqual(f{1, 2, 3}, frozenset({1, 2, 3}))
         self.assertEqual(f{'one': 1, 'two': 2}, frozendict({'one': 1, 'two': 2}))
         self.assertEqual(f{}, frozendict())

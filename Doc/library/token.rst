@@ -163,7 +163,7 @@ The token constants are:
 
    .. versionadded:: 3.14
 
-.. data:: FBRACE
+.. data:: FLBRACE
 
    Token value used for the ``f{`` opening delimiter of a frozenset or
    frozendict display (for example ``f{1, 2}`` or ``f{1: 2}``).  The

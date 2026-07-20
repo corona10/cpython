@@ -15362,7 +15362,7 @@ slice_rule(Parser *p)
 //     | &'(' (genexp | tuple | group)
 //     | &'[' (listcomp | list)
 //     | &'{' (dictcomp | setcomp | dict | set)
-//     | &FBRACE (fdictcomp | fsetcomp | fdict | fset)
+//     | &FLBRACE (fdictcomp | fsetcomp | fdict | fset)
 //     | '...'
 static expr_ty
 atom_rule(Parser *p)
@@ -15606,26 +15606,26 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&'{' (dictcomp | setcomp | dict | set)"));
     }
-    { // &FBRACE (fdictcomp | fsetcomp | fdict | fset)
+    { // &FLBRACE (fdictcomp | fsetcomp | fdict | fset)
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&FBRACE (fdictcomp | fsetcomp | fdict | fset)"));
+        D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&FLBRACE (fdictcomp | fsetcomp | fdict | fset)"));
         void *_tmp_71_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, FBRACE)  // token=FBRACE
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, FLBRACE)  // token=FLBRACE
             &&
             (_tmp_71_var = _tmp_71_rule(p))  // fdictcomp | fsetcomp | fdict | fset
         )
         {
-            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&FBRACE (fdictcomp | fsetcomp | fdict | fset)"));
+            D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "&FLBRACE (fdictcomp | fsetcomp | fdict | fset)"));
             _res = _tmp_71_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s atom[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&FBRACE (fdictcomp | fsetcomp | fdict | fset)"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "&FLBRACE (fdictcomp | fsetcomp | fdict | fset)"));
     }
     { // '...'
         if (p->error_indicator) {
@@ -17859,7 +17859,7 @@ set_rule(Parser *p)
     return _res;
 }
 
-// fset: FBRACE star_named_expressions_sequence '}'
+// fset: FLBRACE star_named_expressions_sequence '}'
 static expr_ty
 fset_rule(Parser *p)
 {
@@ -17881,24 +17881,24 @@ fset_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // FBRACE star_named_expressions_sequence '}'
+    { // FLBRACE star_named_expressions_sequence '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fset[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE star_named_expressions_sequence '}'"));
+        D(fprintf(stderr, "%*c> fset[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE star_named_expressions_sequence '}'"));
         Token * _literal;
         asdl_expr_seq* a;
-        Token * fbrace_var;
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (a = star_named_expressions_sequence_rule(p))  // star_named_expressions_sequence
             &&
             (_literal = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fset[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE star_named_expressions_sequence '}'"));
+            D(fprintf(stderr, "%*c+ fset[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE star_named_expressions_sequence '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -17918,7 +17918,7 @@ fset_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fset[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE star_named_expressions_sequence '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE star_named_expressions_sequence '}'"));
     }
     _res = NULL;
   done:
@@ -18018,7 +18018,7 @@ dict_rule(Parser *p)
     return _res;
 }
 
-// fdict: FBRACE double_starred_kvpairs? '}' | FBRACE invalid_double_starred_kvpairs '}'
+// fdict: FLBRACE double_starred_kvpairs? '}' | FLBRACE invalid_double_starred_kvpairs '}'
 static expr_ty
 fdict_rule(Parser *p)
 {
@@ -18040,24 +18040,24 @@ fdict_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // FBRACE double_starred_kvpairs? '}'
+    { // FLBRACE double_starred_kvpairs? '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fdict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE double_starred_kvpairs? '}'"));
+        D(fprintf(stderr, "%*c> fdict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE double_starred_kvpairs? '}'"));
         Token * _literal;
         void *a;
-        Token * fbrace_var;
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (a = double_starred_kvpairs_rule(p), !p->error_indicator)  // double_starred_kvpairs?
             &&
             (_literal = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fdict[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE double_starred_kvpairs? '}'"));
+            D(fprintf(stderr, "%*c+ fdict[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE double_starred_kvpairs? '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -18077,32 +18077,32 @@ fdict_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fdict[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE double_starred_kvpairs? '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE double_starred_kvpairs? '}'"));
     }
-    { // FBRACE invalid_double_starred_kvpairs '}'
+    { // FLBRACE invalid_double_starred_kvpairs '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fdict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE invalid_double_starred_kvpairs '}'"));
+        D(fprintf(stderr, "%*c> fdict[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE invalid_double_starred_kvpairs '}'"));
         Token * _literal;
-        Token * fbrace_var;
+        Token * flbrace_var;
         void *invalid_double_starred_kvpairs_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (invalid_double_starred_kvpairs_var = invalid_double_starred_kvpairs_rule(p))  // invalid_double_starred_kvpairs
             &&
             (_literal = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fdict[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE invalid_double_starred_kvpairs '}'"));
-            _res = _PyPegen_dummy_name(p, fbrace_var, invalid_double_starred_kvpairs_var, _literal);
+            D(fprintf(stderr, "%*c+ fdict[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE invalid_double_starred_kvpairs '}'"));
+            _res = _PyPegen_dummy_name(p, flbrace_var, invalid_double_starred_kvpairs_var, _literal);
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fdict[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE invalid_double_starred_kvpairs '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE invalid_double_starred_kvpairs '}'"));
     }
     _res = NULL;
   done:
@@ -18642,7 +18642,7 @@ setcomp_rule(Parser *p)
     return _res;
 }
 
-// fsetcomp: FBRACE star_named_expression for_if_clauses '}' | invalid_comprehension
+// fsetcomp: FLBRACE star_named_expression for_if_clauses '}' | invalid_comprehension
 static expr_ty
 fsetcomp_rule(Parser *p)
 {
@@ -18664,18 +18664,18 @@ fsetcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // FBRACE star_named_expression for_if_clauses '}'
+    { // FLBRACE star_named_expression for_if_clauses '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fsetcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE star_named_expression for_if_clauses '}'"));
+        D(fprintf(stderr, "%*c> fsetcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE star_named_expression for_if_clauses '}'"));
         Token * _literal;
         expr_ty a;
         asdl_comprehension_seq* b;
-        Token * fbrace_var;
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (a = star_named_expression_rule(p))  // star_named_expression
             &&
@@ -18684,7 +18684,7 @@ fsetcomp_rule(Parser *p)
             (_literal = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fsetcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE star_named_expression for_if_clauses '}'"));
+            D(fprintf(stderr, "%*c+ fsetcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE star_named_expression for_if_clauses '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -18704,7 +18704,7 @@ fsetcomp_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fsetcomp[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE star_named_expression for_if_clauses '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE star_named_expression for_if_clauses '}'"));
     }
     if (p->call_invalid_rules) { // invalid_comprehension
         if (p->error_indicator) {
@@ -18937,7 +18937,9 @@ dictcomp_rule(Parser *p)
     return _res;
 }
 
-// fdictcomp: FBRACE kvpair for_if_clauses '}' | FBRACE '**' expression for_if_clauses '}'
+// fdictcomp:
+//     | FLBRACE kvpair for_if_clauses '}'
+//     | FLBRACE '**' expression for_if_clauses '}'
 static expr_ty
 fdictcomp_rule(Parser *p)
 {
@@ -18959,18 +18961,18 @@ fdictcomp_rule(Parser *p)
     UNUSED(_start_lineno); // Only used by EXTRA macro
     int _start_col_offset = p->tokens[_mark]->col_offset;
     UNUSED(_start_col_offset); // Only used by EXTRA macro
-    { // FBRACE kvpair for_if_clauses '}'
+    { // FLBRACE kvpair for_if_clauses '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fdictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE kvpair for_if_clauses '}'"));
+        D(fprintf(stderr, "%*c> fdictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE kvpair for_if_clauses '}'"));
         Token * _literal;
         KeyValuePair* a;
         asdl_comprehension_seq* b;
-        Token * fbrace_var;
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (a = kvpair_rule(p))  // kvpair
             &&
@@ -18979,7 +18981,7 @@ fdictcomp_rule(Parser *p)
             (_literal = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fdictcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE kvpair for_if_clauses '}'"));
+            D(fprintf(stderr, "%*c+ fdictcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE kvpair for_if_clauses '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -18999,21 +19001,21 @@ fdictcomp_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fdictcomp[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE kvpair for_if_clauses '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE kvpair for_if_clauses '}'"));
     }
-    { // FBRACE '**' expression for_if_clauses '}'
+    { // FLBRACE '**' expression for_if_clauses '}'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> fdictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE '**' expression for_if_clauses '}'"));
+        D(fprintf(stderr, "%*c> fdictcomp[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE '**' expression for_if_clauses '}'"));
         Token * _literal;
         Token * _literal_1;
         expr_ty a;
         asdl_comprehension_seq* b;
-        Token * fbrace_var;
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
             &&
             (_literal = _PyPegen_expect_token(p, 35))  // token='**'
             &&
@@ -19024,7 +19026,7 @@ fdictcomp_rule(Parser *p)
             (_literal_1 = _PyPegen_expect_token(p, 26))  // token='}'
         )
         {
-            D(fprintf(stderr, "%*c+ fdictcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE '**' expression for_if_clauses '}'"));
+            D(fprintf(stderr, "%*c+ fdictcomp[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE '**' expression for_if_clauses '}'"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -19044,7 +19046,7 @@ fdictcomp_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s fdictcomp[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE '**' expression for_if_clauses '}'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE '**' expression for_if_clauses '}'"));
     }
     _res = NULL;
   done:
@@ -23243,8 +23245,8 @@ invalid_block_rule(Parser *p)
 // invalid_comprehension:
 //     | '[' '**' expression for_if_clauses
 //     | '(' '**' expression for_if_clauses
-//     | ('[' | '{' | FBRACE) star_named_expression ',' star_named_expressions for_if_clauses
-//     | ('[' | '{' | FBRACE) star_named_expression ',' for_if_clauses
+//     | ('[' | '{' | FLBRACE) star_named_expression ',' star_named_expressions for_if_clauses
+//     | ('[' | '{' | FLBRACE) star_named_expression ',' for_if_clauses
 static void *
 invalid_comprehension_rule(Parser *p)
 {
@@ -23323,19 +23325,19 @@ invalid_comprehension_rule(Parser *p)
         D(fprintf(stderr, "%*c%s invalid_comprehension[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' '**' expression for_if_clauses"));
     }
-    { // ('[' | '{' | FBRACE) star_named_expression ',' star_named_expressions for_if_clauses
+    { // ('[' | '{' | FLBRACE) star_named_expression ',' star_named_expressions for_if_clauses
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
+        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
         Token * _literal;
         void *_tmp_124_var;
         expr_ty a;
         asdl_expr_seq* b;
         asdl_comprehension_seq* for_if_clauses_var;
         if (
-            (_tmp_124_var = _tmp_124_rule(p))  // '[' | '{' | FBRACE
+            (_tmp_124_var = _tmp_124_rule(p))  // '[' | '{' | FLBRACE
             &&
             (a = star_named_expression_rule(p))  // star_named_expression
             &&
@@ -23346,7 +23348,7 @@ invalid_comprehension_rule(Parser *p)
             (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
+            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , PyPegen_last_item ( b , expr_ty ) , "did you forget parentheses around the comprehension target?" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -23357,20 +23359,20 @@ invalid_comprehension_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_comprehension[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' star_named_expressions for_if_clauses"));
     }
-    { // ('[' | '{' | FBRACE) star_named_expression ',' for_if_clauses
+    { // ('[' | '{' | FLBRACE) star_named_expression ',' for_if_clauses
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' for_if_clauses"));
+        D(fprintf(stderr, "%*c> invalid_comprehension[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' for_if_clauses"));
         void *_tmp_124_var;
         expr_ty a;
         Token * b;
         asdl_comprehension_seq* for_if_clauses_var;
         if (
-            (_tmp_124_var = _tmp_124_rule(p))  // '[' | '{' | FBRACE
+            (_tmp_124_var = _tmp_124_rule(p))  // '[' | '{' | FLBRACE
             &&
             (a = star_named_expression_rule(p))  // star_named_expression
             &&
@@ -23379,7 +23381,7 @@ invalid_comprehension_rule(Parser *p)
             (for_if_clauses_var = for_if_clauses_rule(p))  // for_if_clauses
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' for_if_clauses"));
+            D(fprintf(stderr, "%*c+ invalid_comprehension[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' for_if_clauses"));
             _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "did you forget parentheses around the comprehension target?" );
             if ((_res == NULL || p->error_indicator) && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -23390,7 +23392,7 @@ invalid_comprehension_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_comprehension[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{' | FBRACE) star_named_expression ',' for_if_clauses"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "('[' | '{' | FLBRACE) star_named_expression ',' for_if_clauses"));
     }
     _res = NULL;
   done:
@@ -36818,7 +36820,7 @@ _loop0_123_rule(Parser *p)
     return _seq;
 }
 
-// _tmp_124: '[' | '{' | FBRACE
+// _tmp_124: '[' | '{' | FLBRACE
 static void *
 _tmp_124_rule(Parser *p)
 {
@@ -36869,24 +36871,24 @@ _tmp_124_rule(Parser *p)
         D(fprintf(stderr, "%*c%s _tmp_124[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'{'"));
     }
-    { // FBRACE
+    { // FLBRACE
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> _tmp_124[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FBRACE"));
-        Token * fbrace_var;
+        D(fprintf(stderr, "%*c> _tmp_124[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "FLBRACE"));
+        Token * flbrace_var;
         if (
-            (fbrace_var = _PyPegen_expect_token(p, FBRACE))  // token='FBRACE'
+            (flbrace_var = _PyPegen_expect_token(p, FLBRACE))  // token='FLBRACE'
         )
         {
-            D(fprintf(stderr, "%*c+ _tmp_124[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FBRACE"));
-            _res = fbrace_var;
+            D(fprintf(stderr, "%*c+ _tmp_124[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "FLBRACE"));
+            _res = flbrace_var;
             goto done;
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s _tmp_124[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FBRACE"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "FLBRACE"));
     }
     _res = NULL;
   done:

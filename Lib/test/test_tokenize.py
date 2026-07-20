@@ -90,7 +90,7 @@ class TokenizeTest(TestCase):
     """)
         # 'f{' opens a frozenset/frozendict display.
         self.check_tokenize("f{1: 2}", """\
-    FBRACE     'f{'          (1, 0) (1, 2)
+    FLBRACE    'f{'          (1, 0) (1, 2)
     NUMBER     '1'           (1, 2) (1, 3)
     OP         ':'           (1, 3) (1, 4)
     NUMBER     '2'           (1, 5) (1, 6)

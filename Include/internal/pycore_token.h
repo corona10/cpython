@@ -78,7 +78,7 @@ extern "C" {
 #define TSTRING_START   62
 #define TSTRING_MIDDLE  63
 #define TSTRING_END     64
-#define FBRACE          65
+#define FLBRACE         65
 #define COMMENT         66
 #define NL              67
 #define ERRORTOKEN      68
