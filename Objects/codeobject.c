@@ -3050,7 +3050,7 @@ _PyCode_ConstantKey(PyObject *op)
         Py_ssize_t pos = 0;
         PyObject *item_key, *item_value;
         Py_ssize_t i, len;
-        PyObject *pairs, *set;
+        PyObject *pairs;
 
         len = PyDict_GET_SIZE(op);
         pairs = PyTuple_New(len);
@@ -3081,15 +3081,8 @@ _PyCode_ConstantKey(PyObject *op)
             PyTuple_SET_ITEM(pairs, i, pair);
             i++;
         }
-        /* Use a frozenset of the pairs so that the key does not depend
-         * on the insertion order, matching frozendict equality. */
-        set = PyFrozenSet_New(pairs);
+        key = _PyTuple_FromPair(pairs, op);
         Py_DECREF(pairs);
-        if (set == NULL)
-            return NULL;
-
-        key = _PyTuple_FromPair(set, op);
-        Py_DECREF(set);
         return key;
     }
     else if (PySlice_Check(op)) {
